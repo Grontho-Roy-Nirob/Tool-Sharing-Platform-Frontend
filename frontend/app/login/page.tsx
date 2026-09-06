@@ -3,9 +3,9 @@ import { ArrowRight, ShieldCheck, User, Wrench } from "lucide-react";
 
 const loginOptions = [
   {
-    title: "User / Renter",
+    title: "Renter",
     description: "Find and borrow tools from people in your community.",
-    href: "/login/renter",
+    href: "/renter",
     icon: User,
   },
   {
