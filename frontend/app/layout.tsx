@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-
+import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -23,7 +23,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={cn("h-full", "antialiased", inter.variable, "font-sans")}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <Toaster position="top-center" richColors closeButton />
+      </body>
     </html>
   );
 }

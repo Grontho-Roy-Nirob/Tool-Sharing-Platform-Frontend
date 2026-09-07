@@ -1,11 +1,82 @@
 "use client";
 
+import axios from "axios";
 import Link from "next/link";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { loginSchema } from "@/schemas/renterAuthSc";
+import { loginRenter } from "@/app/(renter)/_actions/authAction";
+import { toast } from "sonner";
 
 const RenterLoginForm = () => {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  //const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    setLoading(true);
+    //setError("");
+
+    const formData = new FormData(event.currentTarget);
+
+    // ==================== ZOD VALIDATION ====================
+
+    const result = loginSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password"),
+    });
+
+    if (!result.success) {
+      const message = result.error.issues[0]?.message ?? "Invalid input.";
+
+      toast.error(message);
+
+      setLoading(false);
+      return;
+    }
+
+    // ==================== API CALL ====================
+
+    try {
+      const response = await loginRenter(result.data);
+
+      console.log("Login successful:", response);
+
+      // Store token
+      localStorage.setItem("access_token", response.access_token);
+
+      // Success toast
+      toast.success("Login successful!", {
+        description: "Welcome back to ToolShire.",
+      });
+
+      // Redirect
+      //router.push("/renter/dashboard");
+      setTimeout(() => {
+        router.push("/renter/dashboard");
+      }, 500);
+    } catch (error) {
+      console.error("Renter login error:", error);
+
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message;
+
+        if (Array.isArray(message)) {
+          toast.error(message[0] ?? "Login failed.");
+        } else {
+          toast.error(message ?? "Invalid email or password.");
+        }
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-md">
@@ -39,7 +110,8 @@ const RenterLoginForm = () => {
           </p>
         </div>
 
-        <form className="space-y-5">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email */}
           <div>
             <label
@@ -56,7 +128,8 @@ const RenterLoginForm = () => {
               autoComplete="email"
               placeholder="you@example.com"
               required
-              className="w-full rounded-xl border border-[#292b30] bg-[#101114] px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-[#55575e] focus:border-[#55575e] focus:ring-1 focus:ring-[#45474d]"
+              disabled={loading}
+              className="w-full rounded-xl border border-[#292b30] bg-[#101114] px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-[#55575e] focus:border-[#55575e] focus:ring-1 focus:ring-[#45474d] disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
@@ -86,14 +159,16 @@ const RenterLoginForm = () => {
                 autoComplete="current-password"
                 placeholder="Enter your password"
                 required
-                className="w-full rounded-xl border border-[#292b30] bg-[#101114] px-4 py-3 pr-11 text-sm text-white outline-none transition-all placeholder:text-[#55575e] focus:border-[#55575e] focus:ring-1 focus:ring-[#45474d]"
+                disabled={loading}
+                className="w-full rounded-xl border border-[#292b30] bg-[#101114] px-4 py-3 pr-11 text-sm text-white outline-none transition-all placeholder:text-[#55575e] focus:border-[#55575e] focus:ring-1 focus:ring-[#45474d] disabled:cursor-not-allowed disabled:opacity-50"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword((value) => !value)}
+                disabled={loading}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#686a72] transition-colors hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#686a72] transition-colors hover:text-white disabled:opacity-50"
               >
                 {showPassword ? (
                   <EyeOff className="size-4" />
@@ -107,17 +182,27 @@ const RenterLoginForm = () => {
           {/* Login Button */}
           <button
             type="submit"
-            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-medium text-[#101114] transition-all duration-200 hover:scale-[1.01] hover:bg-[#e7e7e8] active:scale-[0.99]"
+            disabled={loading}
+            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-medium text-[#101114] transition-all duration-200 hover:scale-[1.01] hover:bg-[#e7e7e8] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
-            Login
-            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+            {loading ? (
+              <>
+                <span className="size-4 animate-spin rounded-full border-2 border-[#101114]/30 border-t-[#101114]" />
+                Logging in...
+              </>
+            ) : (
+              <>
+                Login
+                <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </>
+            )}
           </button>
         </form>
 
         {/* Registration */}
         <div className="mt-7 border-t border-[#292b30] pt-6 text-center">
           <p className="text-sm text-[#686a72]">
-            Don't have a renter account?{" "}
+            Don&apos;t have a renter account?{" "}
             <Link
               href="/renter/registration"
               className="font-medium text-white transition-colors hover:text-[#c9c9cc]"
