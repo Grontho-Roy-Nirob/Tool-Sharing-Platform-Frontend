@@ -35,7 +35,7 @@ export default function RenterSidebar() {
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-[#292b30] bg-[#0d0e10] lg:flex lg:flex-col">
       {/* Logo */}
       <div className="flex h-20 items-center border-b border-[#292b30] px-6">
-        <Link href="/renter/dashboard" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-bold text-black">
             T
           </div>

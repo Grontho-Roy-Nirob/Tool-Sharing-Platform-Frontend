@@ -11,13 +11,13 @@ const loginOptions = [
   {
     title: "Tool Owner",
     description: "Manage your tools and share them with others.",
-    href: "/login/owner",
+    href: "/owner",
     icon: Wrench,
   },
   {
     title: "Admin",
     description: "Manage the ToolShire platform and its users.",
-    href: "/login/admin",
+    href: "/admin",
     icon: ShieldCheck,
   },
 ];
