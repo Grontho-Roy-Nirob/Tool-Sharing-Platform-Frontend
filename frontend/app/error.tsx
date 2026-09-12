@@ -37,7 +37,6 @@ export default function GlobalError({
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={() => reset()}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#101114] transition hover:bg-[#e4e4e7] active:scale-[0.98]"
           >
             <RefreshCw className="size-4" />
