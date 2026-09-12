@@ -20,11 +20,8 @@ const RenterLoginForm = () => {
 
     setLoading(true);
     //setError("");
-
     const formData = new FormData(event.currentTarget);
-
     // ==================== ZOD VALIDATION ====================
-
     const result = loginSchema.safeParse({
       email: formData.get("email"),
       password: formData.get("password"),
@@ -32,9 +29,7 @@ const RenterLoginForm = () => {
 
     if (!result.success) {
       const message = result.error.issues[0]?.message ?? "Invalid input.";
-
       toast.error(message);
-
       setLoading(false);
       return;
     }
@@ -45,7 +40,6 @@ const RenterLoginForm = () => {
       const response = await loginRenter(result.data);
 
       console.log("Login successful:", response);
-
       // Store token
       localStorage.setItem("access_token", response.access_token);
 
