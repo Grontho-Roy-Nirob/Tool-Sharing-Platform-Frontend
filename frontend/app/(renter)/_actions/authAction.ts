@@ -6,7 +6,6 @@ export interface LoginData {
   email: string;
   password: string;
 }
-
 export interface RegisterData {
   fullName: string;
   email: string;
@@ -24,9 +23,6 @@ export interface RegisterResponse {
   message?: string;
   access_token?: string;
 }
-
-// ==================== LOGIN ====================
-
 export async function loginRenter(data: LoginData): Promise<LoginResponse> {
   const response = await axios.post<LoginResponse>(
     `${API_URL}/renter-auth/login`,
@@ -35,7 +31,6 @@ export async function loginRenter(data: LoginData): Promise<LoginResponse> {
   return response.data;
 }
 
-// ==================== REGISTER ====================
 
 export async function registerRenter(
   data: RegisterData,

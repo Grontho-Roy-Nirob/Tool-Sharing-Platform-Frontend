@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { ArrowLeft, Home, Search } from "lucide-react";
 
@@ -7,7 +8,7 @@ export default function NotFound() {
       <div className="w-full max-w-lg text-center">
         {/* 404 */}
         <div className="relative mx-auto w-fit">
-          <span className="select-none text-[120px] font-bold leading-none tracking-[-0.08em] text-white/[0.04] sm:text-[160px]">
+          <span className="select-none text-[120px] font-bold leading-none tracking-[-0.08em] text-white/4 sm:text-[160px]">
             404
           </span>
 
@@ -17,7 +18,6 @@ export default function NotFound() {
             </div>
           </div>
         </div>
-
         {/* Content */}
         <h1 className="mt-8 text-3xl font-bold tracking-[-0.04em] sm:text-4xl">
           Page not found
@@ -47,7 +47,6 @@ export default function NotFound() {
             Go Back
           </button>
         </div>
-
         {/* Branding */}
         <div className="mt-12 flex items-center justify-center gap-2">
           <span className="flex size-8 items-center justify-center rounded-full bg-white text-xs font-bold text-[#101114]">
