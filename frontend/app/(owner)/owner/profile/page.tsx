@@ -6,8 +6,10 @@ import { Loader2, Save, User } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 
-import OwnerProtected from "../../../../components/authForm/OwnerProtected";
-import api from "../../../../lib/axios";
+import OwnerProtected from "@/components/authForm/OwnerProtected";
+import OwnerSidebar from "@/components/dashboard/owner/OwnerSidebar";
+import OwnerHeader from "@/components/dashboard/owner/OwnerHeader";
+import api from "@/lib/axios";
 
 import {
   AlertDialog,
@@ -18,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../../../../components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 
 // ================= OWNER =================
 
@@ -54,6 +56,8 @@ interface ProfileForm {
   profile_image: File | null;
 }
 
+// ================= COMPONENT =================
+
 export default function OwnerProfilePage() {
   const [owner, setOwner] = useState<Owner | null>(null);
 
@@ -71,11 +75,14 @@ export default function OwnerProfilePage() {
 
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // GET OWNER PROFILE
+  // ================= GET OWNER PROFILE =================
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
+
+        // ================= GET TOKEN =================
 
         const token = localStorage.getItem("access_token");
 
@@ -84,8 +91,11 @@ export default function OwnerProfilePage() {
           return;
         }
 
-        // Decode JWT
+        // ================= DECODE JWT =================
+
         const decoded = jwtDecode<OwnerToken>(token);
+
+        console.log("Decoded JWT:", decoded);
 
         const email = decoded.email;
 
@@ -94,21 +104,33 @@ export default function OwnerProfilePage() {
           return;
         }
 
-        // Get all owners
+        console.log("Owner Email:", email);
+
+        // ================= GET ALL OWNERS =================
+
         const response = await api.get<Owner[]>("/owner/listall");
 
-        // Find logged-in owner
-        const ownerData = response.data.find((item) => item.email === email);
+        console.log("All owners:", response.data);
+
+        // ================= FIND LOGGED-IN OWNER =================
+
+        const ownerData = response.data.find(
+          (item) => item.email === email,
+        );
 
         if (!ownerData) {
           toast.error("Owner information not found.");
           return;
         }
 
-        // Save owner data
+        console.log("Logged in owner:", ownerData);
+
+        // ================= SAVE OWNER =================
+
         setOwner(ownerData);
 
-        // Fill form
+        // ================= FILL FORM =================
+
         setForm({
           name: ownerData.name ?? "",
           email: ownerData.email ?? "",
@@ -129,8 +151,11 @@ export default function OwnerProfilePage() {
     fetchProfile();
   }, []);
 
-  // HANDLE INPUT CHANGE
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // ================= HANDLE INPUT CHANGE =================
+
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const { name, value } = event.target;
 
     setForm((previous) => ({
@@ -139,11 +164,15 @@ export default function OwnerProfilePage() {
     }));
   };
 
-  // HANDLE IMAGE CHANGE
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // ================= HANDLE IMAGE CHANGE =================
+
+  const handleImageChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0] ?? null;
 
     // Check file size
+
     if (file && file.size > 2 * 1024 * 1024) {
       toast.error("Profile image must be less than 2MB");
 
@@ -158,12 +187,11 @@ export default function OwnerProfilePage() {
     }));
   };
 
-  // ==========================================
-  // SUBMIT FORM
-  // OPEN CONFIRMATION
-  // ==========================================
+  // ================= SUBMIT FORM =================
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
 
     if (!owner?.id) {
@@ -174,10 +202,7 @@ export default function OwnerProfilePage() {
     setShowConfirm(true);
   };
 
-  // ==========================================
-  // CONFIRM UPDATE
-  // PATCH /owner/update/:id
-  // ==========================================
+  // ================= CONFIRM UPDATE =================
 
   const handleConfirmUpdate = async () => {
     if (!owner?.id) {
@@ -190,6 +215,8 @@ export default function OwnerProfilePage() {
 
       const formData = new FormData();
 
+      // ================= TEXT DATA =================
+
       formData.append("name", form.name);
       formData.append("email", form.email);
 
@@ -201,19 +228,31 @@ export default function OwnerProfilePage() {
         formData.append("nidNumber", form.nidNumber);
       }
 
+      // ================= PASSWORD =================
+
       if (form.password.trim()) {
         formData.append("password", form.password);
       }
+
+      // ================= PROFILE IMAGE =================
 
       if (form.profile_image) {
         formData.append("myfile", form.profile_image);
       }
 
-      const response = await api.patch(`/owner/update/${owner.id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      // ================= PATCH REQUEST =================
+
+      const response = await api.patch(
+        `/owner/update/${owner.id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      });
+      );
+
+      console.log("Updated owner:", response.data);
 
       if (!response.data) {
         toast.error("Profile updated but couldn't reload data");
@@ -223,7 +262,11 @@ export default function OwnerProfilePage() {
         return;
       }
 
+      // ================= UPDATE OWNER STATE =================
+
       setOwner(response.data);
+
+      // ================= UPDATE FORM =================
 
       setForm({
         name: response.data.name ?? "",
@@ -234,7 +277,11 @@ export default function OwnerProfilePage() {
         profile_image: null,
       });
 
+      // ================= CLOSE DIALOG =================
+
       setShowConfirm(false);
+
+      // ================= SUCCESS =================
 
       toast.success("Profile updated successfully");
     } catch (error) {
@@ -242,7 +289,6 @@ export default function OwnerProfilePage() {
 
       if (axios.isAxiosError(error)) {
         console.log("STATUS:", error.response?.status);
-
         console.log("BACKEND ERROR:", error.response?.data);
 
         const backendMessage = (
@@ -264,130 +310,41 @@ export default function OwnerProfilePage() {
     }
   };
 
+  // ================= UI =================
+
   return (
     <OwnerProtected>
       <div className="min-h-screen bg-[#08090b] text-white">
-        {/*  SIDEBAR */}
 
-        <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[280px] border-r border-[#25272c] bg-[#0b0c0e] lg:block">
-          {/* LOGO */}
+        {/* ================= SIDEBAR ================= */}
 
-          <div className="flex h-[88px] items-center border-b border-[#25272c] px-7">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-lg font-bold text-black">
-                T
-              </div>
+        <OwnerSidebar />
 
-              <span className="text-xl font-bold">ToolShare</span>
-            </div>
-          </div>
-
-          {/* NAVIGATION */}
-
-          <nav className="px-4 py-6">
-            {/* DASHBOARD */}
-
-            <a
-              href="/owner/dashboard"
-              className="mb-2 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm text-[#9ca3af] transition hover:bg-[#15171a] hover:text-white"
-            >
-              <span className="text-lg">▦</span>
-
-              <span>Dashboard</span>
-            </a>
-
-            {/* MY TOOLS */}
-
-            <a
-              href="/owner/mytools"
-              className="mb-2 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm text-[#9ca3af] transition hover:bg-[#15171a] hover:text-white"
-            >
-              <span className="text-lg">▣</span>
-
-              <span>My Tools</span>
-            </a>
-
-            {/* ADD TOOL */}
-
-            {/* PROFILE */}
-
-            <a
-              href="/owner/profile"
-              className="mb-2 flex items-center gap-4 rounded-xl bg-white px-5 py-3.5 text-sm font-medium text-black"
-            >
-              <span className="text-lg">♙</span>
-
-              <span>Profile</span>
-            </a>
-          </nav>
-        </aside>
-
-        {/*  MAIN AREA */}
+        {/* ================= MAIN AREA ================= */}
 
         <div className="lg:ml-[280px]">
-          {/* TOP HEADER */}
 
-          <header className="sticky top-0 z-40 flex h-[88px] items-center justify-between border-b border-[#25272c] bg-[#08090b]/95 px-6 backdrop-blur sm:px-8">
-            <div>
-              <h1 className="text-xl font-bold sm:text-2xl">Profile</h1>
+          {/* ================= HEADER ================= */}
 
-              <p className="mt-1 text-sm text-[#737780]">
-                Manage your ToolShare account
-              </p>
-            </div>
+          <OwnerHeader owner={owner} />
 
-            <div className="flex items-center gap-5">
-              {/* NOTIFICATION */}
-
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#25272c] bg-[#0d0f11] text-lg text-[#a1a5ad] transition hover:bg-[#15171a]"
-              >
-                ♧
-              </button>
-
-              {/* OWNER */}
-
-              <a href="/owner/profile" className="flex items-center gap-3">
-                {owner?.profile_image ? (
-                  <img
-                    src={owner.profile_image}
-                    alt={owner.name}
-                    className="h-11 w-11 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#202226] text-sm font-semibold">
-                    {owner?.name?.charAt(0).toUpperCase() || "O"}
-                  </div>
-                )}
-
-                <div className="hidden sm:block">
-                  <p className="text-sm font-semibold">
-                    {owner?.name || "Owner"}
-                  </p>
-
-                  <p className="mt-0.5 text-xs text-[#737780]">
-                    {owner?.email || ""}
-                  </p>
-                </div>
-              </a>
-            </div>
-          </header>
-
-          {/*  PAGE CONTENT */}
+          {/* ================= PAGE CONTENT ================= */}
 
           <main className="mx-auto max-w-6xl px-6 py-8 sm:px-8 lg:px-10">
-            {/* PAGE HEADER */}
+
+            {/* ================= PAGE HEADER ================= */}
 
             <div className="mb-8">
-              <h2 className="text-3xl font-bold sm:text-4xl">Profile</h2>
+              <h2 className="text-3xl font-bold sm:text-4xl">
+                Profile
+              </h2>
 
               <p className="mt-3 text-sm text-[#8c919b] sm:text-base">
                 Manage your personal information and account details.
               </p>
             </div>
 
-            {/*  LOADING */}
+            {/* ================= LOADING ================= */}
 
             {loading ? (
               <div className="flex min-h-80 items-center justify-center rounded-2xl border border-[#292b30] bg-[#0d0e10]">
@@ -395,10 +352,13 @@ export default function OwnerProfilePage() {
               </div>
             ) : (
               <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-                {/* PROFILE CARD */}
+
+                {/* ================= PROFILE CARD ================= */}
 
                 <section className="h-fit rounded-2xl border border-[#292b30] bg-[#0d0e10] p-6">
+
                   <div className="flex flex-col items-center text-center">
+
                     {/* PROFILE IMAGE */}
 
                     {owner?.profile_image ? (
@@ -432,10 +392,13 @@ export default function OwnerProfilePage() {
                     {/* ACCOUNT INFORMATION */}
 
                     <div className="mt-5 w-full border-t border-[#292b30] pt-5">
+
                       {/* OWNER ID */}
 
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#71717a]">Owner ID</span>
+                        <span className="text-[#71717a]">
+                          Owner ID
+                        </span>
 
                         <span className="font-medium text-[#d4d4d8]">
                           #{owner?.id}
@@ -445,19 +408,23 @@ export default function OwnerProfilePage() {
                       {/* PHONE */}
 
                       <div className="mt-3 flex items-center justify-between gap-4 text-sm">
-                        <span className="text-[#71717a]">Phone</span>
+                        <span className="text-[#71717a]">
+                          Phone
+                        </span>
 
                         <span className="text-right text-[#d4d4d8]">
                           {owner?.phone || "-"}
                         </span>
                       </div>
+
                     </div>
                   </div>
                 </section>
 
-                {/* PROFILE FORM */}
+                {/* ================= PROFILE FORM ================= */}
 
                 <section className="rounded-2xl border border-[#292b30] bg-[#0d0e10] p-6">
+
                   <div className="mb-6">
                     <h2 className="text-lg font-semibold">
                       Personal Information
@@ -468,7 +435,11 @@ export default function OwnerProfilePage() {
                     </p>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                  <form
+                    onSubmit={handleSubmit}
+                    className="space-y-5"
+                  >
+
                     {/* NAME */}
 
                     <div>
@@ -615,6 +586,7 @@ export default function OwnerProfilePage() {
                     {/* SAVE BUTTON */}
 
                     <div className="flex justify-end border-t border-[#292b30] pt-5">
+
                       <button
                         type="submit"
                         disabled={saving}
@@ -626,29 +598,39 @@ export default function OwnerProfilePage() {
                           <Save className="h-4 w-4" />
                         )}
 
-                        {saving ? "Saving..." : "Save Changes"}
+                        {saving
+                          ? "Saving..."
+                          : "Save Changes"}
                       </button>
+
                     </div>
                   </form>
                 </section>
               </div>
             )}
 
-            {/* CONFIRMATION DIALOG */}
+            {/* ================= CONFIRMATION DIALOG ================= */}
 
-            <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+            <AlertDialog
+              open={showConfirm}
+              onOpenChange={setShowConfirm}
+            >
               <AlertDialogContent>
+
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Confirm Changes</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    Confirm Changes
+                  </AlertDialogTitle>
 
                   <AlertDialogDescription>
-                    Are you sure you want to save these changes to your profile?
-                    Please make sure all the information is correct before
-                    continuing.
+                    Are you sure you want to save these changes to your
+                    profile? Please make sure all the information is
+                    correct before continuing.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
 
                 <AlertDialogFooter>
+
                   <AlertDialogCancel disabled={saving}>
                     No, Cancel
                   </AlertDialogCancel>
@@ -666,12 +648,15 @@ export default function OwnerProfilePage() {
                       "Yes, Save Changes"
                     )}
                   </AlertDialogAction>
+
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+
           </main>
         </div>
       </div>
     </OwnerProtected>
   );
 }
+
