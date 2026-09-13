@@ -293,18 +293,6 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
 
       formData.append("location", form.location.trim());
 
-      // IMPORTANT:
-      // Always send the CATEGORY ID, never the category name.
-      //
-      // Example:
-      // "Super Power Tools" -> 1
-      //
-      // Backend receives:
-      // category_id = "1"
-      //
-      // NOT:
-      // category_id = "Super Power Tools"
-
       formData.append("category_id", String(categoryId));
 
       // ================= IMAGE =================

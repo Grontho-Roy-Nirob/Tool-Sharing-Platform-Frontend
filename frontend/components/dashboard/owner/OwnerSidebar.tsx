@@ -5,9 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Wrench,
-  Plus,
   UserCircle,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 
 const menuItems = [
@@ -20,6 +20,11 @@ const menuItems = [
     label: "My Tools",
     href: "/owner/mytools",
     icon: Wrench,
+  },
+  {
+    label: "Orders",
+    href: "/owner/orders",
+    icon: ClipboardList,
   },
   {
     label: "Profile",
