@@ -129,7 +129,6 @@ export default function OwnerProfilePage() {
     fetchProfile();
   }, []);
 
-
   // HANDLE INPUT CHANGE
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -139,7 +138,6 @@ export default function OwnerProfilePage() {
       [name]: value,
     }));
   };
-
 
   // HANDLE IMAGE CHANGE
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,11 +193,9 @@ export default function OwnerProfilePage() {
       formData.append("name", form.name);
       formData.append("email", form.email);
 
-
       if (form.phone.trim()) {
         formData.append("phone", form.phone);
       }
-
 
       if (form.nidNumber.trim()) {
         formData.append("nidNumber", form.nidNumber);
@@ -209,12 +205,10 @@ export default function OwnerProfilePage() {
         formData.append("password", form.password);
       }
 
-
       if (form.profile_image) {
         formData.append("myfile", form.profile_image);
       }
 
-      
       const response = await api.patch(`/owner/update/${owner.id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -230,7 +224,7 @@ export default function OwnerProfilePage() {
       }
 
       setOwner(response.data);
-    
+
       setForm({
         name: response.data.name ?? "",
         email: response.data.email ?? "",
@@ -270,7 +264,6 @@ export default function OwnerProfilePage() {
     }
   };
 
-
   return (
     <OwnerProtected>
       <div className="min-h-screen bg-[#08090b] text-white">
@@ -306,7 +299,7 @@ export default function OwnerProfilePage() {
             {/* MY TOOLS */}
 
             <a
-              href="/owner/tools"
+              href="/owner/mytools"
               className="mb-2 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm text-[#9ca3af] transition hover:bg-[#15171a] hover:text-white"
             >
               <span className="text-lg">▣</span>
@@ -315,15 +308,6 @@ export default function OwnerProfilePage() {
             </a>
 
             {/* ADD TOOL */}
-
-            <a
-              href="/owner/create-tool"
-              className="mb-2 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm text-[#9ca3af] transition hover:bg-[#15171a] hover:text-white"
-            >
-              <span className="text-lg">＋</span>
-
-              <span>Add New Tool</span>
-            </a>
 
             {/* PROFILE */}
 

@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 
-import OwnerProtected from "../../../../components/authForm/OwnerProtected";
-import api from "../../../../lib/axios";
+import OwnerProtected from "@/components/authForm/OwnerProtected";
+import OwnerSidebar from "@/components/dashboard/owner/OwnerSidebar";
+import OwnerHeader from "@/components/dashboard/owner/OwnerHeader";
+import api from "@/lib/axios";
 
 // ================= OWNER =================
 
@@ -40,6 +43,8 @@ interface Tool {
   tool_image?: string;
 }
 
+// ================= COMPONENT =================
+
 export default function OwnerDashboard() {
   const [owner, setOwner] = useState<Owner | null>(null);
   const [tools, setTools] = useState<Tool[]>([]);
@@ -54,7 +59,8 @@ export default function OwnerDashboard() {
         setLoading(true);
         setError("");
 
-        // Login success message
+        // ================= LOGIN MESSAGE =================
+
         const loginSuccess = localStorage.getItem("login_success");
 
         if (loginSuccess === "true") {
@@ -63,7 +69,8 @@ export default function OwnerDashboard() {
           localStorage.removeItem("login_success");
         }
 
-        // Get token
+        // ================= GET TOKEN =================
+
         const token = localStorage.getItem("access_token");
 
         if (!token) {
@@ -71,7 +78,8 @@ export default function OwnerDashboard() {
           return;
         }
 
-        // Decode JWT
+        // ================= DECODE JWT =================
+
         const decoded = jwtDecode<OwnerToken>(token);
 
         console.log("Decoded JWT:", decoded);
@@ -85,12 +93,14 @@ export default function OwnerDashboard() {
 
         console.log("Owner Email:", email);
 
-        // Get all owners
+        // ================= GET ALL OWNERS =================
+
         const ownerResponse = await api.get("/owner/listall");
 
         console.log("All owners:", ownerResponse.data);
 
-        // Find logged-in owner
+        // ================= FIND LOGGED-IN OWNER =================
+
         const ownerData = ownerResponse.data.find(
           (item: Owner) => item.email === email,
         );
@@ -104,7 +114,8 @@ export default function OwnerDashboard() {
 
         setOwner(ownerData);
 
-        // Get owner's tools
+        // ================= GET OWNER TOOLS =================
+
         const toolsResponse = await api.get(`/owner/tools/${ownerData.id}`);
 
         console.log("Owner tools:", toolsResponse.data);
@@ -123,6 +134,7 @@ export default function OwnerDashboard() {
   }, []);
 
   // ================= TOOL COUNTS =================
+
   const pendingTools = tools.filter((tool) => tool.status === "pending").length;
 
   const approvedTools = tools.filter(
@@ -134,6 +146,7 @@ export default function OwnerDashboard() {
   ).length;
 
   // ================= LOGOUT =================
+
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("login_success");
@@ -144,130 +157,22 @@ export default function OwnerDashboard() {
   return (
     <OwnerProtected>
       <div className="min-h-screen bg-[#08090b] text-white">
-        {/* SIDEBAR */}
-        <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[280px] border-r border-[#25272c] bg-[#0b0c0e] lg:block">
-          {/* LOGO */}
-          <div className="flex h-[88px] items-center border-b border-[#25272c] px-7">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-lg font-bold text-black">
-                T
-              </div>
+        {/* ================= SIDEBAR ================= */}
 
-              <span className="text-xl font-bold">ToolShare</span>
-            </div>
-          </div>
+        <OwnerSidebar />
 
-          {/* NAVIGATION */}
-          <nav className="px-4 py-6">
-            {/* DASHBOARD */}
-            <a
-              href="/owner/dashboard"
-              className="mb-2 flex items-center gap-4 rounded-xl bg-white px-5 py-3.5 text-sm font-medium text-black"
-            >
-              <span className="text-lg">▦</span>
+        {/* ================= MAIN AREA ================= */}
 
-              <span>Dashboard</span>
-            </a>
-
-            {/* MY TOOLS */}
-            <a
-              href="/owner/tools"
-              className="mb-2 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm text-[#9ca3af] transition hover:bg-[#15171a] hover:text-white"
-            >
-              <span className="text-lg">▣</span>
-
-              <span>My Tools</span>
-            </a>
-
-            {/* ADD TOOL */}
-            <a
-              href="/owner/create-tool"
-              className="mb-2 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm text-[#9ca3af] transition hover:bg-[#15171a] hover:text-white"
-            >
-              <span className="text-lg">＋</span>
-
-              <span>Add New Tool</span>
-            </a>
-
-            {/* PROFILE */}
-            <a
-              href="/owner/profile"
-              className="mb-2 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm text-[#9ca3af] transition hover:bg-[#15171a] hover:text-white"
-            >
-              <span className="text-lg">♙</span>
-
-              <span>Profile</span>
-            </a>
-          </nav>
-
-          {/* LOGOUT */}
-          <div className="absolute bottom-0 left-0 w-full border-t border-[#25272c] p-5">
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-sm text-[#9ca3af] transition hover:bg-[#15171a] hover:text-white"
-            >
-              <span className="text-lg">↪</span>
-
-              <span>Logout</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* MAIN AREA */}
         <div className="lg:ml-[280px]">
-          {/* TOP HEADER */}
-          <header className="sticky top-0 z-40 flex h-[88px] items-center justify-between border-b border-[#25272c] bg-[#08090b]/95 px-6 backdrop-blur sm:px-8">
-            {/* LEFT */}
+          {/* ================= HEADER ================= */}
 
-            <div>
-              <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
+          <OwnerHeader owner={owner} />
 
-              <p className="mt-1 text-sm text-[#737780]">
-                Manage your ToolShare account
-              </p>
-            </div>
+          {/* ================= PAGE CONTENT ================= */}
 
-            {/* RIGHT */}
-            <div className="flex items-center gap-5">
-              {/* NOTIFICATION */}
-
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#25272c] bg-[#0d0f11] text-lg text-[#a1a5ad] transition hover:bg-[#15171a]"
-              >
-                ♧
-              </button>
-
-              {/* OWNER PROFILE */}
-
-              <a href="/owner/profile" className="flex items-center gap-3">
-                {owner?.profile_image ? (
-                  <img
-                    src={owner.profile_image}
-                    alt={owner.name}
-                    className="h-11 w-11 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#202226] text-sm font-semibold">
-                    {owner?.name?.charAt(0).toUpperCase() || "O"}
-                  </div>
-                )}
-
-                <div className="hidden sm:block">
-                  <p className="text-sm font-semibold">
-                    {owner?.name || "Owner"}
-                  </p>
-
-                  <p className="mt-0.5 text-xs text-[#737780]">
-                    {owner?.email || ""}
-                  </p>
-                </div>
-              </a>
-            </div>
-          </header>
-
-          {/* PAGE CONTENT */}
           <main className="px-6 py-8 sm:px-8 lg:px-10">
+            {/* ================= WELCOME ================= */}
+
             <section className="mb-9">
               <h2 className="text-3xl font-bold sm:text-4xl">
                 Welcome back
@@ -280,9 +185,12 @@ export default function OwnerDashboard() {
               </p>
             </section>
 
-            {/* LOADING */}
+            {/* ================= LOADING ================= */}
+
             {loading && (
               <div className="space-y-6">
+                {/* STAT SKELETONS */}
+
                 <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
                   {Array.from({ length: 4 }).map((_, index) => (
                     <div
@@ -292,21 +200,26 @@ export default function OwnerDashboard() {
                   ))}
                 </div>
 
+                {/* RECENT TOOLS SKELETON */}
+
                 <div className="h-72 animate-pulse rounded-2xl border border-[#292b30] bg-[#0d0e10]" />
               </div>
             )}
 
-            {/* ERROR */}
+            {/* ================= ERROR ================= */}
+
             {!loading && error && (
               <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-6 py-5 text-red-400">
                 {error}
               </div>
             )}
 
-            {/* DASHBOARD CONTENT */}
+            {/* ================= DASHBOARD ================= */}
+
             {!loading && !error && (
               <>
-                {/* STATISTICS */}
+                {/* ================= STATISTICS ================= */}
+
                 <section>
                   <div className="mb-5">
                     <h2 className="text-xl font-semibold">Overview</h2>
@@ -317,7 +230,7 @@ export default function OwnerDashboard() {
                   </div>
 
                   <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                    {/* TOTAL */}
+                    {/* TOTAL TOOLS */}
 
                     <div className="rounded-2xl border border-[#292b30] bg-[#0d0e10] p-6 transition hover:border-[#3a3c42]">
                       <div className="flex items-start justify-between">
@@ -335,7 +248,8 @@ export default function OwnerDashboard() {
                       </div>
                     </div>
 
-                    {/* PENDING */}
+                    {/* PENDING TOOLS */}
+
                     <div className="rounded-2xl border border-[#292b30] bg-[#0d0e10] p-6 transition hover:border-[#3a3c42]">
                       <div className="flex items-start justify-between">
                         <div>
@@ -354,7 +268,8 @@ export default function OwnerDashboard() {
                       </div>
                     </div>
 
-                    {/* APPROVED */}
+                    {/* APPROVED TOOLS */}
+
                     <div className="rounded-2xl border border-[#292b30] bg-[#0d0e10] p-6 transition hover:border-[#3a3c42]">
                       <div className="flex items-start justify-between">
                         <div>
@@ -373,7 +288,8 @@ export default function OwnerDashboard() {
                       </div>
                     </div>
 
-                    {/* REJECTED */}
+                    {/* REJECTED TOOLS */}
+
                     <div className="rounded-2xl border border-[#292b30] bg-[#0d0e10] p-6 transition hover:border-[#3a3c42]">
                       <div className="flex items-start justify-between">
                         <div>
@@ -394,7 +310,8 @@ export default function OwnerDashboard() {
                   </div>
                 </section>
 
-                {/* RECENT TOOLS */}
+                {/* ================= RECENT TOOLS ================= */}
+
                 <section className="mt-10 rounded-2xl border border-[#292b30] bg-[#0d0e10]">
                   {/* HEADER */}
 
@@ -407,12 +324,16 @@ export default function OwnerDashboard() {
                       </p>
                     </div>
 
-                    <a
-                      href="/owner/tools"
+                    {/* IMPORTANT:
+                        This must point to /owner/mytools
+                    */}
+
+                    <Link
+                      href="/owner/mytools"
                       className="text-sm font-medium text-[#aeb4bd] transition hover:text-white"
                     >
                       View all →
-                    </a>
+                    </Link>
                   </div>
 
                   {/* TOOL LIST */}
@@ -431,6 +352,13 @@ export default function OwnerDashboard() {
                         <p className="mt-2 text-sm text-[#777d87]">
                           You have not added any tools yet.
                         </p>
+
+                        <Link
+                          href="/owner/create-tool"
+                          className="mt-5 inline-flex rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
+                        >
+                          Add Your First Tool
+                        </Link>
                       </div>
                     ) : (
                       /* TOOL LIST */
@@ -458,6 +386,8 @@ export default function OwnerDashboard() {
                                 </div>
                               )}
 
+                              {/* TOOL DETAILS */}
+
                               <div>
                                 <h3 className="font-semibold">
                                   {tool.tool_name}
@@ -468,17 +398,12 @@ export default function OwnerDashboard() {
 
                                   <span>{tool.condition}</span>
 
-                                  <span>
-                                    ৳{tool.rental_price_per_day}
-                                    /day
-                                  </span>
+                                  <span>৳{tool.rental_price_per_day}/day</span>
 
                                   <span>{tool.location}</span>
                                 </div>
                               </div>
                             </div>
-
-                            {/* STATUS */}
 
                             {/* STATUS */}
 
@@ -491,7 +416,7 @@ export default function OwnerDashboard() {
                                     : "border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
                               }`}
                             >
-                              {/* STATUS ICON */}
+                              {/* STATUS DOT */}
 
                               <span
                                 className={`h-2 w-2 rounded-full ${

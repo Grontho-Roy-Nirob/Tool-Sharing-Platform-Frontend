@@ -1,5 +1,5 @@
 "use client";
-
+import { Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -33,6 +33,11 @@ const navItems = [
     label: "Owners",
     href: "/admin/owners",
     icon: UserRoundCog,
+  },
+  {
+    label: "Tools",
+    href: "/admin/tools",
+    icon: Wrench,
   },
   {
     label: "Categories",
