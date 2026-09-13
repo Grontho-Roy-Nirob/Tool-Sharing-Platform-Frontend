@@ -21,7 +21,7 @@ export default function OwnerHeader({ owner }: OwnerHeaderProps) {
   const initial = ownerName.charAt(0).toUpperCase() || "O";
 
   return (
-    <header className="sticky top-0 z-40 flex h-[88px] items-center justify-between border-b border-[#25272c] bg-[#08090b]/95 px-6 backdrop-blur sm:px-8">
+    <header className="sticky top-0 z-40 flex h-88px items-center justify-between border-b border-[#25272c] bg-[#08090b]/95 px-6 backdrop-blur sm:px-8">
       {/* LEFT */}
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-[#555a63]">
@@ -40,7 +40,7 @@ export default function OwnerHeader({ owner }: OwnerHeaderProps) {
           type="button"
           className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#25272c] bg-[#0d0f11] text-[#a1a5ad] transition hover:bg-[#15171a] hover:text-white"
         >
-          <Bell className="h-[18px] w-[18px]" />
+          <Bell className="h-18px w-18px" />
         </button>
 
         {/* Owner Profile */}
