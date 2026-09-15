@@ -47,46 +47,84 @@ export default function AdminStats() {
 
   useEffect(() => {
     const loadStats = async () => {
+      setLoading(true);
+
+      // Check Admin Token
+      console.log("ADMIN TOKEN:", localStorage.getItem("admin_access_token"));
+
+      // =========================
+      // RENTERS
+      // =========================
       try {
-        const [
-          rentersResponse,
-          ownersResponse,
-          categoriesResponse,
-          adminsResponse,
-        ] = await Promise.all([
-          adminApi.get("/renter"),
-          adminApi.get("/owner/listall"),
-          adminApi.get("/admin/categories"),
-          adminApi.get("/admin/listall"),
-        ]);
+        const response = await adminApi.get("/renter");
 
-        setStats({
-          renters: Array.isArray(rentersResponse.data)
-            ? rentersResponse.data.length
-            : 0,
+        console.log("Renters response:", response.data);
 
-          owners: Array.isArray(ownersResponse.data)
-            ? ownersResponse.data.length
-            : 0,
-
-          categories: Array.isArray(categoriesResponse.data)
-            ? categoriesResponse.data.length
-            : 0,
-
-          admins: Array.isArray(adminsResponse.data)
-            ? adminsResponse.data.length
-            : 0,
-        });
+        setStats((previous) => ({
+          ...previous,
+          renters: Array.isArray(response.data) ? response.data.length : 0,
+        }));
       } catch (error) {
-        console.error("Failed to load admin statistics:", error);
-      } finally {
-        setLoading(false);
+        console.error("Failed to load renters:", error);
       }
+
+      // =========================
+      // OWNERS
+      // =========================
+      try {
+        const response = await adminApi.get("/owner/listall");
+
+        console.log("Owners response:", response.data);
+
+        setStats((previous) => ({
+          ...previous,
+          owners: Array.isArray(response.data) ? response.data.length : 0,
+        }));
+      } catch (error) {
+        console.error("Failed to load owners:", error);
+      }
+
+      // =========================
+      // CATEGORIES
+      // =========================
+      try {
+        const response = await adminApi.get("/admin/categories");
+
+        console.log("Categories response:", response.data);
+
+        setStats((previous) => ({
+          ...previous,
+          categories: Array.isArray(response.data) ? response.data.length : 0,
+        }));
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+
+      // =========================
+      // ADMINS
+      // =========================
+      try {
+        const response = await adminApi.get("/admin/listall");
+
+        console.log("Admins response:", response.data);
+
+        setStats((previous) => ({
+          ...previous,
+          admins: Array.isArray(response.data) ? response.data.length : 0,
+        }));
+      } catch (error) {
+        console.error("Failed to load admins:", error);
+      }
+
+      setLoading(false);
     };
 
     loadStats();
   }, []);
 
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
     return (
       <div className="flex h-32 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
@@ -95,6 +133,9 @@ export default function AdminStats() {
     );
   }
 
+  // =========================
+  // STAT CARDS
+  // =========================
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatCard

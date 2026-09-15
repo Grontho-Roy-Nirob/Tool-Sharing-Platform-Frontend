@@ -2,24 +2,27 @@
 
 import axios from "axios";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, Hammer, Share2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, ShieldCheck, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginSchema } from "@/schemas/renterAuthSc";
-import { loginRenter } from "@/app/(renter)/_actions/authAction";
+import { toast } from "sonner";
 
-const RenterLoginForm = () => {
+import { loginSchema } from "@/schemas/adminAuthSc";
+import { loginAdmin } from "@/app/(admin)/_actions/authAction";
+
+const AdminLoginForm = () => {
   const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ==================== ERROR STATE ====================
+  // ERROR STATE
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
   }>({});
 
+  // SUBMIT
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -28,7 +31,7 @@ const RenterLoginForm = () => {
 
     const formData = new FormData(event.currentTarget);
 
-    // ==================== ZOD VALIDATION ====================
+    // ZOD VALIDATION
     const result = loginSchema.safeParse({
       email: formData.get("email"),
       password: formData.get("password"),
@@ -53,22 +56,42 @@ const RenterLoginForm = () => {
 
       setErrors(fieldErrors);
       setLoading(false);
+
       return;
     }
 
-    // ==================== API CALL ====================
+    // API CALL
     try {
-      const response = await loginRenter(result.data);
+      const response = await loginAdmin(result.data);
 
-      console.log("Login successful:", response);
+      console.log("Admin login successful:", response);
 
-      // Store token
-      localStorage.setItem("access_token", response.access_token);
+      const { access_token, admin } = response;
 
-      // Redirect
-      router.push("/renter/dashboard");
+      // ROLE CHECK
+      if (admin.role !== 1) {
+        toast.error("You are not authorized as an admin.");
+        return;
+      }
+
+      localStorage.setItem("admin_access_token", access_token);
+
+      localStorage.setItem(
+        "admin_user",
+        JSON.stringify({
+          id: admin.id,
+          full_name: admin.full_name,
+          email: admin.email,
+          role: admin.role,
+        }),
+      );
+
+      toast.success("Login successful!");
+
+      // REDIRECT
+      router.replace("/admin/dashboard");
     } catch (error) {
-      console.error("Renter login error:", error);
+      console.error("Admin login error:", error);
 
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
@@ -93,65 +116,35 @@ const RenterLoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-lg">
-      {/* Logo */}
+    <div className="w-full max-w-md">
+      {/*  LOGO  */}
+
       <div className="mb-8 text-center">
         <Link
           href="/"
           aria-label="ToolShare home"
           className="group inline-flex items-center gap-3"
         >
-          {/* Logo Icon */}
+          {/* Logo */}
           <span
             className="
-              relative
               flex size-11
               items-center justify-center
-              overflow-hidden
+              rounded-xl
               border-2 border-[#211F1C]
-              bg-[#E8A33D]
-              text-[#211F1C]
-              shadow-[3px_3px_0_#211F1C]
+              bg-[#211F1C]
+              text-white
+              shadow-[3px_3px_0_#d1d5db]
               transition-all
               duration-200
               group-hover:-translate-y-0.5
-              group-hover:shadow-[4px_4px_0_#211F1C]
+              group-hover:shadow-[4px_4px_0_#d1d5db]
             "
           >
-            {/* Hammer */}
-            <Hammer
-              className="
-                relative z-10
-                size-5.5
-                -rotate-12
-                stroke-[2.5]
-                transition-transform
-                duration-300
-                group-hover:rotate-0
-              "
-            />
-
-            {/* Share Icon */}
-            <span
-              className="
-                absolute
-                bottom-1
-                right-1
-                flex size-4
-                items-center justify-center
-                rounded-full
-                bg-[#F3EFE7]
-                text-[#211F1C]
-                transition-transform
-                duration-300
-                group-hover:scale-110
-              "
-            >
-              <Share2 className="size-2.5 stroke-[2.5]" />
-            </span>
+            <ShieldCheck className="size-5 stroke-[2.5]" />
           </span>
 
-          {/* Brand Name */}
+          {/* Brand */}
           <div className="text-left">
             <span
               className="
@@ -161,7 +154,7 @@ const RenterLoginForm = () => {
                 font-bold
                 leading-none
                 tracking-[-0.02em]
-                text-slate-900
+                text-[#211F1C]
               "
             >
               ToolShare Platform
@@ -172,31 +165,33 @@ const RenterLoginForm = () => {
                 mt-1
                 block
                 text-[10px]
-                font-medium
+                font-semibold
                 tracking-[0.14em]
-                text-slate-500
+                text-gray-400
               "
             >
-              Rent · Share · Save
+              ADMINISTRATION PORTAL
             </span>
           </div>
         </Link>
       </div>
 
-      {/* Card */}
+      {/* CARD  */}
+
       <div
         className="
           relative
           overflow-hidden
           rounded-[28px]
-          border border-slate-200
+          border border-gray-200
           bg-white
           p-6
-          shadow-[0_20px_60px_rgba(15,23,42,0.08)]
+          shadow-[0_20px_60px_rgba(0,0,0,0.08)]
           sm:p-8
         "
       >
-        {/* Soft decorative colors */}
+        {/* Decorative Circle */}
+
         <div
           className="
             pointer-events-none
@@ -224,7 +219,8 @@ const RenterLoginForm = () => {
         />
 
         <div className="relative">
-          {/* Header */}
+          {/* HEADER  */}
+
           <div className="mb-8">
             <div
               className="
@@ -242,8 +238,8 @@ const RenterLoginForm = () => {
                 text-indigo-600
               "
             >
-              <span className="size-1.5 rounded-full bg-indigo-500" />
-              Renter Account
+              <ShieldCheck className="size-3.5" />
+              Admin Account
             </div>
 
             <h1
@@ -251,21 +247,30 @@ const RenterLoginForm = () => {
                 text-2xl
                 font-bold
                 tracking-[-0.04em]
-                text-slate-900
+                text-[#211F1C]
                 sm:text-3xl
               "
             >
               Welcome back
             </h1>
 
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Login to your ToolShare renter account.
+            <p
+              className="
+                mt-2
+                text-sm
+                leading-6
+                text-gray-500
+              "
+            >
+              Sign in to manage your ToolShare platform.
             </p>
           </div>
 
-          {/* Form */}
+          {/* FORM  */}
+
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
-            {/* Email */}
+            {/*  EMAIL */}
+
             <div>
               <label
                 htmlFor="email"
@@ -274,7 +279,7 @@ const RenterLoginForm = () => {
                   block
                   text-sm
                   font-semibold
-                  text-slate-700
+                  text-gray-700
                 "
               >
                 Email address
@@ -283,69 +288,66 @@ const RenterLoginForm = () => {
               <input
                 id="email"
                 name="email"
-                type="text"
+                type="email"
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder="admin@toolshare.com"
                 disabled={loading}
                 className={`
                   w-full
                   rounded-xl
                   border
-                  bg-slate-50
-                  px-4 py-3
+                  bg-gray-50
+                  px-4
+                  py-3
                   text-sm
-                  text-slate-900
+                  text-gray-900
                   outline-none
                   transition-all
-                  placeholder:text-slate-400
+                  placeholder:text-gray-400
                   focus:bg-white
                   focus:ring-4
                   disabled:cursor-not-allowed
                   disabled:opacity-50
+
                   ${
                     errors.email
                       ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-                      : "border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/30 focus:border-indigo-400 focus:ring-indigo-100"
+                      : "border-gray-200 hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-100"
                   }
                 `}
               />
 
               {/* Email Error */}
+
               {errors.email && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">
+                <p
+                  className="
+                    mt-1.5
+                    text-xs
+                    font-medium
+                    text-red-500
+                  "
+                >
                   {errors.email}
                 </p>
               )}
             </div>
 
-            {/* Password */}
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="
-                    block
-                    text-sm
-                    font-semibold
-                    text-slate-700
-                  "
-                >
-                  Password
-                </label>
+            {/* PASSWORD  */}
 
-                <Link
-                  href="/renter/forgot-password"
-                  className="
-                    text-xs
-                    font-medium
-                    text-indigo-600
-                    transition-colors
-                    hover:text-violet-600
-                  "
-                >
-                  Forgot password?
-                </Link>
-              </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-gray-700
+                "
+              >
+                Password
+              </label>
 
               <div className="relative">
                 <input
@@ -359,24 +361,29 @@ const RenterLoginForm = () => {
                     w-full
                     rounded-xl
                     border
-                    bg-slate-50
-                    px-4 py-3 pr-11
+                    bg-gray-50
+                    px-4
+                    py-3
+                    pr-12
                     text-sm
-                    text-slate-900
+                    text-gray-900
                     outline-none
                     transition-all
-                    placeholder:text-slate-400
+                    placeholder:text-gray-400
                     focus:bg-white
                     focus:ring-4
                     disabled:cursor-not-allowed
                     disabled:opacity-50
+
                     ${
                       errors.password
                         ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-                        : "border-slate-200 hover:border-violet-200 hover:bg-violet-50/20 focus:border-violet-400 focus:ring-violet-100"
+                        : "border-gray-200 hover:border-violet-300 focus:border-violet-500 focus:ring-violet-100"
                     }
                   `}
                 />
+
+                {/* Show / Hide Password */}
 
                 <button
                   type="button"
@@ -390,10 +397,10 @@ const RenterLoginForm = () => {
                     -translate-y-1/2
                     rounded-lg
                     p-1.5
-                    text-slate-400
+                    text-gray-400
                     transition-all
-                    hover:bg-violet-50
-                    hover:text-violet-600
+                    hover:bg-gray-100
+                    hover:text-gray-700
                     disabled:opacity-50
                   "
                 >
@@ -406,14 +413,23 @@ const RenterLoginForm = () => {
               </div>
 
               {/* Password Error */}
+
               {errors.password && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">
+                <p
+                  className="
+                    mt-1.5
+                    text-xs
+                    font-medium
+                    text-red-500
+                  "
+                >
                   {errors.password}
                 </p>
               )}
             </div>
 
-            {/* Login Button */}
+            {/* LOGIN BUTTON  */}
+
             <button
               type="submit"
               disabled={loading}
@@ -425,21 +441,18 @@ const RenterLoginForm = () => {
                 justify-center
                 gap-2
                 rounded-xl
-                bg-gradient-to-r
-                from-indigo-600
-                to-violet-600
+                bg-[#211F1C]
                 px-5
                 py-3.5
                 text-sm
                 font-semibold
                 text-white
-                shadow-[0_10px_25px_rgba(79,70,229,0.22)]
+                shadow-[0_10px_25px_rgba(33,31,28,0.15)]
                 transition-all
                 duration-200
                 hover:-translate-y-0.5
-                hover:from-indigo-700
-                hover:to-violet-700
-                hover:shadow-[0_14px_30px_rgba(79,70,229,0.28)]
+                hover:bg-black
+                hover:shadow-[0_14px_30px_rgba(33,31,28,0.20)]
                 active:translate-y-0
                 disabled:cursor-not-allowed
                 disabled:opacity-50
@@ -448,21 +461,12 @@ const RenterLoginForm = () => {
             >
               {loading ? (
                 <>
-                  <span
-                    className="
-                      size-4
-                      animate-spin
-                      rounded-full
-                      border-2
-                      border-white/30
-                      border-t-white
-                    "
-                  />
-                  Logging in...
+                  <Loader2 className="size-4 animate-spin" />
+                  Signing in...
                 </>
               ) : (
                 <>
-                  Login
+                  Sign In
                   <ArrowRight
                     className="
                       size-4
@@ -476,44 +480,41 @@ const RenterLoginForm = () => {
             </button>
           </form>
 
-          {/* Registration */}
+          {/* ADMIN NOTICE  */}
+
           <div
             className="
               mt-7
               border-t
-              border-slate-200
+              border-gray-100
               pt-6
               text-center
             "
           >
-            <p className="text-sm text-slate-500">
-              Don&apos;t have a renter account?{" "}
-              <Link
-                href="/renter/registration"
-                className="
-                  font-semibold
-                  text-indigo-600
-                  transition-colors
-                  hover:text-violet-600
-                "
-              >
-                Create account
-              </Link>
+            <p
+              className="
+                text-xs
+                leading-5
+                text-gray-400
+              "
+            >
+              This area is restricted to authorized administrators only.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Back */}
+      {/*  BACK  */}
+
       <div className="mt-6 text-center">
         <Link
           href="/login"
           className="
             text-sm
             font-medium
-            text-slate-500
+            text-gray-400
             transition-colors
-            hover:text-indigo-600
+            hover:text-gray-800
           "
         >
           ← Choose another login
@@ -523,4 +524,4 @@ const RenterLoginForm = () => {
   );
 };
 
-export default RenterLoginForm;
+export default AdminLoginForm;

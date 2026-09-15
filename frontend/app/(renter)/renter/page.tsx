@@ -2,7 +2,7 @@ import RenterLoginForm from "@/components/authForm/RenterLoginForm";
 
 const RenterLoginPage = () => {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#090a0c] px-4 py-12">
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-12">
       <RenterLoginForm />
     </main>
   );
