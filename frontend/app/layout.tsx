@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -10,11 +11,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "ToolShire",
-    template: "%s | ToolShire",
+    default: "ToolShare",
+    template: "%s | ToolShare",
   },
   description:
-    "ToolShire is a community-powered platform for borrowing, lending, and sharing tools.",
+    "ToolShare is a community-powered platform for borrowing, lending, and sharing tools.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={cn("h-full", "antialiased", inter.variable, "font-sans")}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col bg-[#faf7f2] text-slate-900">
         {children}
         <Toaster position="top-center" richColors />
       </body>

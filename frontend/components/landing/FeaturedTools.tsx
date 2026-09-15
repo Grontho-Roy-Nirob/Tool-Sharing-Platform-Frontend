@@ -3,47 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowUpRight, MapPin, Loader2 } from "lucide-react";
+import { ArrowUpRight, MapPin, Loader2, Sparkles } from "lucide-react";
 import { getPublicTools, PublicTool } from "@/lib/toolapi";
-
-const headerVariants = {
-  hidden: {
-    opacity: 0,
-    y: 30,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.7,
-      ease: "easeOut" as const,
-    },
-  },
-};
-
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.15,
-    },
-  },
-};
-
-const cardVariants = {
-  hidden: {
-    opacity: 0,
-    y: 40,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut" as const,
-    },
-  },
-};
 
 const FeaturedTools = () => {
   const [tools, setTools] = useState<PublicTool[]>([]);
@@ -57,8 +18,6 @@ const FeaturedTools = () => {
         setError(false);
 
         const data = await getPublicTools();
-
-        // Show only the first 3 on the landing page
         setTools(data.slice(0, 3));
       } catch (err) {
         console.error("Failed to fetch public tools:", err);
@@ -74,65 +33,96 @@ const FeaturedTools = () => {
   return (
     <section
       id="tools"
-      className="mx-auto max-w-1152px px-4 py-24 sm:px-8 sm:py-32"
+      className="mx-auto max-w-[1200px] px-4 py-24 sm:px-8 sm:py-28"
     >
-      {/* Header */}
-      <motion.div
-        variants={headerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.25 }}
-        className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end"
-      >
-        <div>
-          {/* Badge */}
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#292b30] bg-[#0d0e10] px-4 py-2 text-sm text-[#a5a5ab]">
-            <span
-              className="size-1.5 rounded-full bg-white"
-              aria-hidden="true"
-            />
-            Explore the community
+      {/* =====================================================
+          HEADER
+      ====================================================== */}
+
+      <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+        <div className="max-w-2xl">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="flex size-8 items-center justify-center rounded-full bg-[#E8A33D]/20 text-[#C1502E]">
+              <Sparkles className="size-4" />
+            </span>
+
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#C1502E]">
+              Featured tools
+            </span>
           </div>
 
-          {/* Heading */}
-          <h2 className="max-w-xl text-4xl font-medium tracking-[-0.06em] text-white sm:text-5xl">
-            Tools ready when you need them.
+          <h2 className="font-[family-name:var(--font-display)] text-4xl font-bold leading-[1.05] tracking-tight text-[#211F1C] sm:text-5xl">
+            Tools ready when
+            <br />
+            <span className="text-[#C1502E]">you need them.</span>
           </h2>
 
-          {/* Description */}
-          <p className="mt-5 max-w-xl text-base leading-7 text-[#96979f] sm:text-lg">
+          <p className="mt-5 max-w-xl text-base leading-7 text-[#5F5D58] sm:text-lg">
             Discover useful tools shared by people around you and borrow exactly
             what you need.
           </p>
         </div>
 
-        {/* View All */}
         <Link
           href="/tools"
-          className="group flex shrink-0 items-center gap-2 text-sm font-medium text-white"
+          className="
+            group
+            inline-flex
+            w-fit
+            items-center
+            gap-2
+            border-b-2
+            border-[#211F1C]
+            pb-1.5
+            text-sm
+            font-bold
+            text-[#211F1C]
+            transition-colors
+            hover:border-[#C1502E]
+            hover:text-[#C1502E]
+          "
         >
           View all tools
-          <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+          <ArrowUpRight
+            className="
+              size-4
+              transition-transform
+              duration-200
+              group-hover:translate-x-1
+              group-hover:-translate-y-1
+            "
+          />
         </Link>
-      </motion.div>
+      </div>
 
-      {/* Loading */}
+      {/* LOADING */}
+
       {loading && (
-        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((item) => (
             <div
               key={item}
-              className="overflow-hidden rounded-3xl border border-[#292b30] bg-[#0d0e10]"
+              className="
+                overflow-hidden
+                rounded-2xl
+                border
+                border-[#211F1C]/10
+                bg-white
+              "
             >
-              <div className="aspect-4/3 animate-pulse bg-[#151619]" />
+              <div className="aspect-[4/3] animate-pulse bg-[#211F1C]/5" />
 
-              <div className="space-y-4 p-5">
-                <div className="h-3 w-24 animate-pulse rounded bg-[#202126]" />
-                <div className="h-6 w-40 animate-pulse rounded bg-[#202126]" />
+              <div className="space-y-5 p-5">
+                <div className="h-3 w-24 animate-pulse rounded bg-[#211F1C]/10" />
+
+                <div className="h-6 w-40 animate-pulse rounded bg-[#211F1C]/10" />
+
+                <div className="h-px bg-[#211F1C]/10" />
 
                 <div className="flex justify-between">
-                  <div className="h-4 w-28 animate-pulse rounded bg-[#202126]" />
-                  <div className="h-4 w-20 animate-pulse rounded bg-[#202126]" />
+                  <div className="h-4 w-28 animate-pulse rounded bg-[#211F1C]/10" />
+
+                  <div className="h-5 w-20 animate-pulse rounded bg-[#211F1C]/10" />
                 </div>
               </div>
             </div>
@@ -140,16 +130,37 @@ const FeaturedTools = () => {
         </div>
       )}
 
-      {/* Error */}
+      {/* ERROR */}
+
       {!loading && error && (
-        <div className="mt-12 rounded-3xl border border-[#292b30] bg-[#0d0e10] px-6 py-12 text-center">
-          <p className="text-sm text-[#96979f]">
+        <div
+          className="
+            rounded-2xl
+            border
+            border-dashed
+            border-[#211F1C]/20
+            bg-[#F3EFE7]/60
+            px-6
+            py-14
+            text-center
+          "
+        >
+          <p className="text-sm text-[#6B6A66]">
             We couldn't load the tools right now.
           </p>
 
           <Link
             href="/tools"
-            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white"
+            className="
+              mt-4
+              inline-flex
+              items-center
+              gap-2
+              text-sm
+              font-bold
+              text-[#211F1C]
+              hover:text-[#C1502E]
+            "
           >
             Browse all tools
             <ArrowUpRight className="size-4" />
@@ -157,16 +168,37 @@ const FeaturedTools = () => {
         </div>
       )}
 
-      {/* Empty */}
+      {/* EMPTY */}
+
       {!loading && !error && tools.length === 0 && (
-        <div className="mt-12 rounded-3xl border border-[#292b30] bg-[#0d0e10] px-6 py-12 text-center">
-          <p className="text-sm text-[#96979f]">
+        <div
+          className="
+            rounded-2xl
+            border
+            border-dashed
+            border-[#211F1C]/20
+            bg-[#F3EFE7]/60
+            px-6
+            py-14
+            text-center
+          "
+        >
+          <p className="text-sm text-[#6B6A66]">
             No approved tools are available yet.
           </p>
 
           <Link
             href="/tools"
-            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white"
+            className="
+              mt-4
+              inline-flex
+              items-center
+              gap-2
+              text-sm
+              font-bold
+              text-[#211F1C]
+              hover:text-[#C1502E]
+            "
           >
             Explore tools
             <ArrowUpRight className="size-4" />
@@ -174,14 +206,25 @@ const FeaturedTools = () => {
         </div>
       )}
 
-      {/* Tool Cards */}
+      {/* TOOL CARDS */}
+
       {!loading && !error && tools.length > 0 && (
         <motion.div
-          variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.15 }}
-          className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3"
+          viewport={{
+            once: true,
+            amount: 0.15,
+          }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.12,
+              },
+            },
+          }}
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
         >
           {tools.map((tool) => {
             const imageUrl = tool.tool_image
@@ -191,56 +234,246 @@ const FeaturedTools = () => {
             return (
               <motion.div
                 key={tool.id}
-                variants={cardVariants}
-                whileHover={{
-                  y: -6,
-                  transition: {
-                    duration: 0.2,
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    y: 24,
+                  },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: {
+                      duration: 0.5,
+                    },
                   },
                 }}
               >
-                <Link
-                  href={`/tools/${tool.id}`}
-                  className="group block overflow-hidden rounded-3xl border border-[#292b30] bg-[#0d0e10] transition-colors duration-300 hover:border-[#45474d]"
-                >
-                  {/* Image */}
-                  <div className="aspect-4/3 overflow-hidden bg-[#151619]">
-                    <img
-                      src={imageUrl}
-                      alt={tool.tool_name}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </div>
+                <Link href={`/tools/${tool.id}`} className="group block h-full">
+                  <article
+                    className="
+                      h-full
+                      overflow-hidden
+                      rounded-2xl
+                      border
+                      border-[#211F1C]/10
+                      bg-white
+                      shadow-[0_4px_20px_rgba(33,31,28,0.05)]
+                      transition-all
+                      duration-300
+                      group-hover:-translate-y-1.5
+                      group-hover:border-[#211F1C]/20
+                      group-hover:shadow-[0_16px_35px_rgba(33,31,28,0.12)]
+                    "
+                  >
+                    {/* IMAGE */}
 
-                  {/* Content */}
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium uppercase tracking-wider text-[#686a72]">
-                          {tool.category?.name ?? "Uncategorized"}
-                        </p>
+                    <div
+                      className="
+                        relative
+                        aspect-[4/3]
+                        overflow-hidden
+                        bg-[#EDE8DE]
+                      "
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={tool.tool_name}
+                        className="
+                          h-full
+                          w-full
+                          object-cover
+                          transition-transform
+                          duration-700
+                          ease-out
+                          group-hover:scale-110
+                        "
+                      />
 
-                        <h3 className="mt-2 truncate text-xl font-medium tracking-[-0.03em] text-white">
-                          {tool.tool_name}
-                        </h3>
+                      {/* Image Overlay */}
+
+                      <div
+                        className="
+                          absolute
+                          inset-0
+                          bg-gradient-to-t
+                          from-[#211F1C]/45
+                          via-transparent
+                          to-transparent
+                          opacity-70
+                        "
+                      />
+
+                      {/* Category */}
+
+                      <div
+                        className="
+                          absolute
+                          left-4
+                          top-4
+                          rounded-full
+                          border
+                          border-white/40
+                          bg-white/95
+                          px-3
+                          py-1.5
+                          text-[11px]
+                          font-bold
+                          uppercase
+                          tracking-wide
+                          text-[#211F1C]
+                          shadow-sm
+                        "
+                      >
+                        {tool.category?.name ?? "Uncategorized"}
                       </div>
 
-                      <ArrowUpRight className="size-5 shrink-0 text-[#686a72] transition-colors group-hover:text-white" />
+                      {/* Arrow */}
+
+                      <div
+                        className="
+                          absolute
+                          right-4
+                          top-4
+                          flex
+                          size-10
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-[#211F1C]
+                          text-[#F3EFE7]
+                          opacity-0
+                          shadow-lg
+                          transition-all
+                          duration-300
+                          group-hover:translate-x-0
+                          group-hover:opacity-100
+                        "
+                      >
+                        <ArrowUpRight className="size-5" />
+                      </div>
+
+                      {/* Bottom Price */}
+
+                      <div
+                        className="
+                          absolute
+                          bottom-4
+                          left-4
+                          flex
+                          items-baseline
+                          gap-1
+                          rounded-xl
+                          bg-white
+                          px-3.5
+                          py-2
+                          shadow-lg
+                        "
+                      >
+                        <span className="text-lg font-black text-[#211F1C]">
+                          ৳{Number(tool.rental_price_per_day).toLocaleString()}
+                        </span>
+
+                        <span className="text-[11px] font-medium text-[#77736D]">
+                          /day
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="mt-5 flex items-center justify-between gap-4">
-                      <div className="flex min-w-0 items-center gap-1.5 text-sm text-[#7d7f87]">
-                        <MapPin className="size-4 shrink-0" />
+                    {/*  CONTENT */}
+
+                    <div className="p-5">
+                      {/* Tool Name */}
+
+                      <div className="flex items-start justify-between gap-4">
+                        <h3
+                          className="
+                            line-clamp-1
+                            font-[family-name:var(--font-display)]
+                            text-xl
+                            font-bold
+                            text-[#211F1C]
+                            transition-colors
+                            group-hover:text-[#C1502E]
+                          "
+                        >
+                          {tool.tool_name}
+                        </h3>
+
+                        <ArrowUpRight
+                          className="
+                            mt-0.5
+                            size-5
+                            shrink-0
+                            text-[#AAA69E]
+                            transition-all
+                            duration-300
+                            group-hover:-translate-y-0.5
+                            group-hover:translate-x-0.5
+                            group-hover:text-[#C1502E]
+                          "
+                        />
+                      </div>
+
+                      {/* Location */}
+
+                      <div
+                        className="
+                          mt-4
+                          flex
+                          items-center
+                          gap-2
+                          text-sm
+                          text-[#77736D]
+                        "
+                      >
+                        <span
+                          className="
+                            flex
+                            size-7
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-full
+                            bg-[#C1502E]/10
+                          "
+                        >
+                          <MapPin className="size-3.5 text-[#C1502E]" />
+                        </span>
 
                         <span className="truncate">{tool.location}</span>
                       </div>
 
-                      <span className="shrink-0 text-sm font-medium text-white">
-                        ৳{Number(tool.rental_price_per_day).toLocaleString()}
-                        /day
-                      </span>
+                      {/* Bottom Divider */}
+
+                      <div className="mt-5 border-t border-[#211F1C]/10 pt-4">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className="
+                              text-xs
+                              font-semibold
+                              uppercase
+                              tracking-wider
+                              text-[#96928B]
+                            "
+                          >
+                            Available for rent
+                          </span>
+
+                          <span
+                            className="
+                              text-xs
+                              font-bold
+                              text-[#211F1C]
+                              transition-colors
+                              group-hover:text-[#C1502E]
+                            "
+                          >
+                            View details →
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </article>
                 </Link>
               </motion.div>
             );

@@ -20,7 +20,7 @@ interface Owner {
   email: string;
   phone?: string;
   profile_image?: string;
-}
+} 
 
 // ================= JWT =================
 

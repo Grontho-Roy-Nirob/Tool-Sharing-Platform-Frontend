@@ -61,9 +61,7 @@ export default function ToolsPage() {
     fetchTools();
   }, []);
 
-  /* -------------------------
-     Filter options
-  ------------------------- */
+  /*  Filter options */
 
   const categories = useMemo(() => {
     return Array.from(
@@ -81,9 +79,7 @@ export default function ToolsPage() {
     );
   }, [tools]);
 
-  /* -------------------------
-     Filter + Search + Sort
-  ------------------------- */
+  /*  Filter + Search + Sort */
 
   const filteredTools = useMemo(() => {
     let result = [...tools];
