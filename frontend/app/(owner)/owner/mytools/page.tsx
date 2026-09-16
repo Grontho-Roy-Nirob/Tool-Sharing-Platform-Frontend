@@ -34,57 +34,62 @@ interface OwnerToken {
 export default function OwnerToolsPage() {
   const [owner, setOwner] = useState<Owner | null>(null);
   const [ownerId, setOwnerId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // ================= LOAD OWNER =================
 
   useEffect(() => {
     const loadOwner = async () => {
       try {
         setLoading(true);
+        setError("");
 
-        // Get the same token used by the Owner Dashboard
+        // ================= GET TOKEN =================
+
         const token = localStorage.getItem("access_token");
 
         if (!token) {
-          console.error("Owner token not found.");
+          setError("Please login first.");
           return;
         }
 
-        // Decode JWT
+        // ================= DECODE TOKEN =================
+
         const decoded = jwtDecode<OwnerToken>(token);
-
-        console.log("Decoded owner token:", decoded);
-
         const email = decoded.email;
 
         if (!email) {
-          console.error("Owner email not found in token.");
+          setError("Owner email not found. Please login again.");
           return;
         }
 
-        // Get all owners
-        const response = await api.get("/owner/listall");
+        // ================= GET ALL OWNERS =================
 
-        console.log("All owners:", response.data);
+        const response = await api.get<Owner[]>("/owner/listall");
 
-        // Find currently logged-in owner
+        // ================= FIND CURRENT OWNER =================
+
         const currentOwner = response.data.find(
-          (item: Owner) => item.email === email,
+          (item) =>
+            item.email?.trim().toLowerCase() === email.trim().toLowerCase(),
         );
 
         if (!currentOwner) {
-          console.error("Logged-in owner not found.");
+          setError("Owner information not found.");
           return;
         }
 
-        console.log("Current owner:", currentOwner);
+        // ================= SAVE OWNER =================
 
-        // Save owner information
         setOwner(currentOwner);
-
-        // Save owner ID
         setOwnerId(currentOwner.id);
+
+        localStorage.setItem("owner_data", JSON.stringify(currentOwner));
       } catch (error) {
         console.error("Failed to load owner:", error);
+        setError("Failed to load owner information.");
       } finally {
         setLoading(false);
       }
@@ -95,59 +100,27 @@ export default function OwnerToolsPage() {
 
   return (
     <OwnerProtected>
-      <div className="min-h-screen bg-[#090a0c] text-white">
-        {/* ================= SIDEBAR ================= */}
-
+      <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
         <OwnerSidebar />
 
-        {/* ================= MAIN AREA ================= */}
-
         <div className="lg:ml-[280px]">
-          {/* ================= HEADER ================= */}
-
           <OwnerHeader owner={owner} />
 
-          {/* ================= CONTENT ================= */}
-
-          <main className="px-4 py-6 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-7xl">
-              {/* ================= PAGE HEADER ================= */}
-
-              {/* ================= LOADING ================= */}
-
+          <main className="px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+            <div className="mx-auto max-w-[1280px]">
               {loading ? (
-                <div className="flex min-h-[350px] items-center justify-center rounded-2xl border border-[#292b30] bg-[#0d0e10]">
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-7 w-7 animate-spin text-white/50" />
-
-                    <p className="text-sm text-white/40">
-                      Loading your tools...
-                    </p>
-                  </div>
+                <div className="flex min-h-[400px] items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#c1502e]" />
                 </div>
-              ) : ownerId ? (
-                /* ================= OWNER TOOLS ================= */
-
+              ) : error ? (
+                <div className="rounded-[18px] border border-[#f2c6c2] bg-[#fff5f3] px-4 py-3 text-sm font-medium text-[#c1502e]">
+                  {error}
+                </div>
+              ) : ownerId !== null ? (
                 <OwnerTools ownerId={ownerId} />
               ) : (
-                /* ================= OWNER ERROR ================= */
-
-                <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-6 py-6">
-                  <h2 className="text-base font-semibold text-red-400">
-                    Unable to load owner information
-                  </h2>
-
-                  <p className="mt-2 text-sm text-red-400/70">
-                    We could not identify your owner account. Please login again
-                    and try again.
-                  </p>
-
-                  <a
-                    href="/login"
-                    className="mt-5 inline-flex rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
-                  >
-                    Login Again
-                  </a>
+                <div className="rounded-[18px] border border-[#f2c6c2] bg-[#fff5f3] px-4 py-3 text-sm font-medium text-[#c1502e]">
+                  Owner information is unavailable.
                 </div>
               )}
             </div>

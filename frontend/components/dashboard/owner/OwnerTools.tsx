@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Edit3,
+  Hammer,
   Image as ImageIcon,
   Loader2,
   MapPin,
@@ -28,7 +29,7 @@ interface Tool {
   created_at: string;
   updated_at: string;
   status: "pending" | "approved" | "rejected";
-  tool_image: string;
+  tool_image?: string;
   category_id: number;
 }
 
@@ -45,6 +46,18 @@ interface OwnerToolsProps {
   ownerId: number;
 }
 
+// ================= FORM =================
+
+interface ToolForm {
+  tool_name: string;
+  description: string;
+  brand: string;
+  condition: string;
+  rental_price_per_day: string;
+  location: string;
+  category_id: string;
+}
+
 // ================= COMPONENT =================
 
 export default function OwnerTools({ ownerId }: OwnerToolsProps) {
@@ -52,16 +65,13 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [loading, setLoading] = useState(true);
-
   const [showForm, setShowForm] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // ================= FORM =================
-
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ToolForm>({
     tool_name: "",
     description: "",
     brand: "",
@@ -72,6 +82,18 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
   });
 
   const [image, setImage] = useState<File | null>(null);
+
+  // ================= IMAGE URL =================
+
+  const getImageUrl = (toolImage?: string) => {
+    if (!toolImage) return null;
+
+    if (toolImage.startsWith("http")) {
+      return toolImage;
+    }
+
+    return `${process.env.NEXT_PUBLIC_API_URL}/uploads/${toolImage}`;
+  };
 
   // ================= FETCH TOOLS =================
 
@@ -106,6 +128,8 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
   // ================= INITIAL LOAD =================
 
   useEffect(() => {
+    if (!ownerId) return;
+
     fetchTools();
     fetchCategories();
   }, [ownerId]);
@@ -127,14 +151,14 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     setEditingTool(null);
   };
 
-  // ================= CREATE FORM =================
+  // ================= OPEN CREATE FORM =================
 
   const openCreateForm = () => {
     resetForm();
     setShowForm(true);
   };
 
-  // ================= EDIT FORM =================
+  // ================= OPEN EDIT FORM =================
 
   const openEditForm = (tool: Tool) => {
     setEditingTool(tool);
@@ -146,9 +170,6 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
       condition: tool.condition,
       rental_price_per_day: String(tool.rental_price_per_day),
       location: tool.location,
-
-      // Make sure category_id is stored as a string
-      // for the HTML select value.
       category_id: String(tool.category_id),
     });
 
@@ -190,7 +211,6 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
       return;
     }
 
-    // Validate image type
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(selectedFile.type)) {
@@ -199,7 +219,6 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
       return;
     }
 
-    // Validate 2MB
     if (selectedFile.size > 2 * 1024 * 1024) {
       toast.error("Image size must be less than 2MB.");
       e.target.value = "";
@@ -253,8 +272,6 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
       return;
     }
 
-    // ================= CATEGORY VALIDATION =================
-
     if (!form.category_id) {
       toast.error("Please select a category");
       return;
@@ -267,8 +284,6 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
       return;
     }
 
-    // ================= IMAGE VALIDATION =================
-
     if (!editingTool && !image) {
       toast.error("Tool image is required");
       return;
@@ -277,28 +292,18 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     try {
       setSaving(true);
 
-      // ================= FORM DATA =================
-
       const formData = new FormData();
 
       formData.append("tool_name", form.tool_name.trim());
-
       formData.append("description", form.description.trim());
-
       formData.append("brand", form.brand.trim());
-
       formData.append("condition", form.condition.trim());
-
       formData.append("rental_price_per_day", String(rentalPrice));
-
       formData.append("location", form.location.trim());
-
       formData.append("category_id", String(categoryId));
 
-      // ================= IMAGE =================
-
       if (image) {
-        // Backend expects "myfile"
+        // Backend expects the field name "myfile"
         formData.append("myfile", image);
       }
 
@@ -330,8 +335,6 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
 
         toast.success("Tool added successfully. Waiting for admin approval.");
       }
-
-      // ================= CLOSE =================
 
       setShowForm(false);
       resetForm();
@@ -385,7 +388,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-white/50" />
+        <Loader2 className="h-7 w-7 animate-spin text-[#c1502e]" />
       </div>
     );
   }
@@ -393,45 +396,99 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
   // ================= RENDER =================
 
   return (
-    <div className="space-y-6">
-      {/* ================= HEADER ================= */}
+    <div className="space-y-5">
+      {/* ================= PAGE HEADER ================= */}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <section className="relative overflow-hidden rounded-[22px] bg-[#292722] px-5 py-6 shadow-[0_12px_32px_rgba(41,39,34,0.12)] sm:px-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[#c1502e]/15" />
+
+        <div className="pointer-events-none absolute -bottom-20 right-24 h-40 w-40 rounded-full bg-[#e4a15b]/10" />
+
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#c1502e]">
+                <Hammer className="h-3 w-3 text-white" />
+              </span>
+
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">
+                Tool Management
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              My Tools
+            </h1>
+
+            <p className="mt-2 text-xs leading-5 text-white/50 sm:text-sm">
+              Manage your listed tools, update information and track approval
+              status.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={openCreateForm}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e8a33d] px-4 py-3 text-sm font-bold text-[#211f1c] shadow-[3px_3px_0_#171612] transition hover:-translate-y-0.5 hover:bg-[#f0b354] hover:shadow-[4px_4px_0_#171612]"
+          >
+            <Plus className="h-4 w-4" />
+            Add Tool
+          </button>
+        </div>
+      </section>
+
+      {/* ================= SUMMARY ================= */}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[#eee8e1] bg-white px-4 py-3 shadow-[0_6px_22px_rgba(55,45,30,0.04)]">
         <div>
-          <h2 className="text-lg font-semibold text-white">My Tools</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aaa39a]">
+            Your Collection
+          </p>
 
-          <p className="mt-1 text-sm text-white/40">
-            {tools.length} {tools.length === 1 ? "tool" : "tools"} in your
-            collection
+          <p className="mt-1 text-sm font-semibold text-[#211f1c]">
+            {tools.length} {tools.length === 1 ? "tool" : "tools"} listed
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={openCreateForm}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:bg-white/90"
-        >
-          <Plus className="h-4 w-4" />
-          Add Tool
-        </button>
+        <div className="flex flex-wrap gap-2 text-[10px] font-bold">
+          <span className="rounded-full border border-[#f1d39b] bg-[#fff8e8] px-3 py-1.5 text-[#b7791f]">
+            {tools.filter((tool) => tool.status === "pending").length} Pending
+          </span>
+
+          <span className="rounded-full border border-[#b7e4c7] bg-[#effaf2] px-3 py-1.5 text-[#16803c]">
+            {tools.filter((tool) => tool.status === "approved").length} Approved
+          </span>
+
+          <span className="rounded-full border border-[#f5c2c7] bg-[#fff3f4] px-3 py-1.5 text-[#c63c4a]">
+            {tools.filter((tool) => tool.status === "rejected").length} Rejected
+          </span>
+        </div>
       </div>
 
       {/* ================= FORM ================= */}
 
       {showForm && (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
-          {/* FORM HEADER */}
-
-          <div className="mb-6 flex items-start justify-between">
+        <section className="overflow-hidden rounded-[22px] border border-[#eee8e1] bg-white shadow-[0_8px_28px_rgba(55,45,30,0.055)]">
+          <div className="flex items-start justify-between border-b border-[#eee8e1] bg-[#fcfaf7] px-5 py-4 sm:px-6">
             <div>
-              <h2 className="text-lg font-semibold text-white">
-                {editingTool ? "Edit Tool" : "Add New Tool"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#fff3dd] text-[#c17a28]">
+                  {editingTool ? (
+                    <Edit3 className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                </div>
 
-              <p className="mt-1 text-sm text-white/40">
+                <h2 className="text-base font-bold text-[#211f1c]">
+                  {editingTool ? "Edit Tool" : "Add New Tool"}
+                </h2>
+              </div>
+
+              <p className="mt-1.5 text-xs text-[#8c837a]">
                 {editingTool
                   ? "Update your tool information."
-                  : "Add a tool to your rental collection."}
+                  : "Add a new tool to your rental collection."}
               </p>
             </div>
 
@@ -439,71 +496,53 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
               type="button"
               onClick={closeForm}
               disabled={saving}
-              className="rounded-lg p-2 text-white/40 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
+              className="rounded-lg p-2 text-[#aaa39a] transition hover:bg-[#f1ece5] hover:text-[#211f1c] disabled:opacity-50"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* FORM */}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6">
             <div className="grid gap-5 md:grid-cols-2">
               {/* TOOL NAME */}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">
-                  Tool Name
-                </label>
-
+              <FormField label="Tool Name">
                 <input
                   name="tool_name"
                   value={form.tool_name}
                   onChange={handleChange}
                   placeholder="e.g. Bosch Professional Drill"
-                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-white/30"
+                  className="form-input"
                 />
-              </div>
+              </FormField>
 
               {/* BRAND */}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">
-                  Brand
-                </label>
-
+              <FormField label="Brand">
                 <input
                   name="brand"
                   value={form.brand}
                   onChange={handleChange}
                   placeholder="e.g. Bosch"
-                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-white/30"
+                  className="form-input"
                 />
-              </div>
+              </FormField>
 
               {/* CONDITION */}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">
-                  Condition
-                </label>
-
+              <FormField label="Condition">
                 <input
                   name="condition"
                   value={form.condition}
                   onChange={handleChange}
                   placeholder="e.g. Excellent"
-                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-white/30"
+                  className="form-input"
                 />
-              </div>
+              </FormField>
 
               {/* RENTAL PRICE */}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">
-                  Rental Price / Day
-                </label>
-
+              <FormField label="Rental Price / Day">
                 <input
                   name="rental_price_per_day"
                   type="number"
@@ -512,50 +551,30 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
                   value={form.rental_price_per_day}
                   onChange={handleChange}
                   placeholder="500"
-                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-white/30"
+                  className="form-input"
                 />
-              </div>
+              </FormField>
 
               {/* LOCATION */}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">
-                  Location
-                </label>
-
+              <FormField label="Location">
                 <input
                   name="location"
                   value={form.location}
                   onChange={handleChange}
                   placeholder="e.g. Dhaka"
-                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-white/30"
+                  className="form-input"
                 />
-              </div>
+              </FormField>
 
-              {/* ================= CATEGORY ================= */}
+              {/* CATEGORY */}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">
-                  Category
-                </label>
-
+              <FormField label="Category">
                 <select
                   name="category_id"
                   value={form.category_id}
-                  onChange={(e) => {
-                    // HTML select gives us a string.
-                    // Convert it to a valid numeric ID,
-                    // then store it back as a string
-                    // because the select value is string-based.
-
-                    const selectedId = e.target.value;
-
-                    setForm((current) => ({
-                      ...current,
-                      category_id: selectedId,
-                    }));
-                  }}
-                  className="w-full rounded-xl border border-white/10 bg-[#111214] px-4 py-3 text-sm text-white outline-none focus:border-white/30"
+                  onChange={handleChange}
+                  className="form-input bg-white"
                 >
                   <option value="">Select category</option>
 
@@ -565,59 +584,51 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
                     </option>
                   ))}
                 </select>
-
-                {/* Optional debugging/help text */}
-
-                {form.category_id && (
-                  <p className="mt-2 text-xs text-white/30">
-                    Category ID: {form.category_id}
-                  </p>
-                )}
-              </div>
+              </FormField>
             </div>
 
-            {/* ================= DESCRIPTION ================= */}
+            {/* DESCRIPTION */}
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-white/70">
-                Description
-              </label>
-
+            <FormField label="Description">
               <textarea
                 name="description"
                 value={form.description}
                 onChange={handleChange}
                 rows={4}
                 placeholder="Describe the tool, its features and suitable use..."
-                className="w-full resize-none rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-white/25 focus:border-white/30"
+                className="form-input resize-none leading-6"
               />
-            </div>
+            </FormField>
 
-            {/* ================= IMAGE ================= */}
+            {/* IMAGE */}
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/70">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#8c837a]">
                 Tool Image
               </label>
 
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-black/20 px-6 py-8 text-center transition hover:border-white/30 hover:bg-white/[0.03]">
-                <ImageIcon className="mb-3 h-6 w-6 text-white/30" />
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-[16px] border border-dashed border-[#dfd5ca] bg-[#fcfaf7] px-6 py-8 text-center transition hover:border-[#d7a45b] hover:bg-[#fff8ed]">
+                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-[13px] bg-[#fff3dd] text-[#c17a28]">
+                  <ImageIcon className="h-5 w-5" />
+                </div>
 
                 {image ? (
                   <>
-                    <p className="text-sm text-white">{image.name}</p>
+                    <p className="text-sm font-semibold text-[#211f1c]">
+                      {image.name}
+                    </p>
 
-                    <p className="mt-1 text-xs text-white/30">
+                    <p className="mt-1 text-xs text-[#8c837a]">
                       {(image.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-sm text-white/60">
+                    <p className="text-sm font-semibold text-[#51483f]">
                       Click to upload an image
                     </p>
 
-                    <p className="mt-1 text-xs text-white/30">
+                    <p className="mt-1 text-xs text-[#aaa39a]">
                       JPG, JPEG, PNG or WEBP • Max 2MB
                     </p>
                   </>
@@ -632,14 +643,14 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
               </label>
             </div>
 
-            {/* ================= ACTIONS ================= */}
+            {/* ACTIONS */}
 
-            <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-5">
+            <div className="flex flex-col-reverse gap-3 border-t border-[#eee8e1] pt-5 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={closeForm}
                 disabled={saving}
-                className="rounded-xl px-4 py-2.5 text-sm text-white/50 transition hover:bg-white/[0.05] hover:text-white disabled:opacity-50"
+                className="rounded-xl border border-[#e5ddd3] px-5 py-2.5 text-sm font-semibold text-[#8c837a] transition hover:bg-[#f7f4ef] hover:text-[#211f1c] disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -647,7 +658,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e8a33d] px-5 py-2.5 text-sm font-bold text-[#211f1c] shadow-[2px_2px_0_#211f1c] transition hover:-translate-y-0.5 hover:bg-[#f0b354] hover:shadow-[3px_3px_0_#211f1c] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
 
@@ -655,34 +666,37 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
               </button>
             </div>
           </form>
-        </div>
+        </section>
       )}
 
       {/* ================= EMPTY STATE ================= */}
 
       {tools.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-16 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06]">
-            <ImageIcon className="h-5 w-5 text-white/30" />
+        <section className="rounded-[22px] border border-dashed border-[#dfd5ca] bg-white px-6 py-16 text-center shadow-[0_6px_22px_rgba(55,45,30,0.04)]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[16px] bg-[#fff3dd] text-[#c17a28]">
+            <Hammer className="h-7 w-7" />
           </div>
 
-          <h3 className="text-base font-medium text-white">No tools yet</h3>
+          <h3 className="mt-4 text-base font-bold text-[#211f1c]">
+            No tools yet
+          </h3>
 
-          <p className="mt-1 text-sm text-white/40">
-            Add your first tool to start renting it out.
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#8c837a]">
+            You have not added any tools yet. Add your first tool to start
+            renting through ToolShare.
           </p>
 
           <button
             type="button"
             onClick={openCreateForm}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#e8a33d] px-5 py-3 text-sm font-bold text-[#211f1c] shadow-[2px_2px_0_#211f1c] transition hover:-translate-y-0.5 hover:bg-[#f0b354]"
           >
             <Plus className="h-4 w-4" />
             Add Tool
           </button>
-        </div>
+        </section>
       ) : (
-        /* ================= TOOLS ================= */
+        /* ================= TOOLS GRID ================= */
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {tools.map((tool) => (
@@ -692,10 +706,60 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
               deleting={deletingId === tool.id}
               onEdit={() => openEditForm(tool)}
               onDelete={() => handleDelete(tool)}
+              getImageUrl={getImageUrl}
             />
           ))}
         </div>
       )}
+
+      {/* ================= LOCAL STYLES ================= */}
+
+      <style jsx>{`
+        .form-input {
+          width: 100%;
+          border: 1px solid #e5ddd3;
+          border-radius: 12px;
+          background: #fffdfb;
+          padding: 12px 14px;
+          font-size: 14px;
+          color: #211f1c;
+          outline: none;
+          transition:
+            border-color 0.2s,
+            box-shadow 0.2s;
+        }
+
+        .form-input::placeholder {
+          color: #b7aea4;
+        }
+
+        .form-input:focus {
+          border-color: #d7a45b;
+          box-shadow: 0 0 0 3px rgba(232, 163, 61, 0.14);
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ======================================================
+// FORM FIELD
+// ======================================================
+
+function FormField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#8c837a]">
+        {label}
+      </label>
+
+      {children}
     </div>
   );
 }
@@ -709,92 +773,103 @@ function ToolCard({
   deleting,
   onEdit,
   onDelete,
+  getImageUrl,
 }: {
   tool: Tool;
   deleting: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  getImageUrl: (toolImage?: string) => string | null;
 }) {
-  const imageUrl = tool.tool_image
-    ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/${tool.tool_image}`
-    : null;
+  const imageUrl = getImageUrl(tool.tool_image);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition hover:border-white/15">
+    <article className="group overflow-hidden rounded-[22px] border border-[#eee8e1] bg-white shadow-[0_8px_28px_rgba(55,45,30,0.055)] transition-all duration-300 hover:-translate-y-1 hover:border-[#e8cda5] hover:shadow-[0_14px_32px_rgba(55,45,30,0.09)]">
       {/* ================= IMAGE ================= */}
 
-      <div className="relative aspect-[16/10] bg-white/[0.04]">
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#f5f1eb]">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={tool.tool_name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <ImageIcon className="h-8 w-8 text-white/20" />
+          <div className="flex h-full items-center justify-center bg-[#fff3dd] text-[#c17a28]">
+            <ImageIcon className="h-10 w-10" />
           </div>
         )}
 
-        {/* STATUS */}
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/35 to-transparent" />
 
-        <div className="absolute right-3 top-3">
+        <div className="absolute left-3 top-3">
           <StatusBadge status={tool.status} />
+        </div>
+
+        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1.5 text-[10px] font-bold text-[#211f1c] backdrop-blur-sm">
+          <MapPin className="h-3 w-3 text-[#c1502e]" />
+          {tool.location}
         </div>
       </div>
 
       {/* ================= CONTENT ================= */}
 
-      <div className="p-5">
+      <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate font-semibold text-white">
+            <h3 className="truncate text-base font-bold text-[#211f1c]">
               {tool.tool_name}
             </h3>
 
-            <p className="mt-1 text-sm text-white/40">{tool.brand}</p>
+            <p className="mt-1 text-xs font-medium text-[#8c837a]">
+              {tool.brand}
+            </p>
           </div>
 
-          <p className="shrink-0 text-sm font-medium text-white">
-            ৳{Number(tool.rental_price_per_day).toLocaleString()}
-            <span className="text-xs font-normal text-white/30">/day</span>
-          </p>
+          <div className="shrink-0 text-right">
+            <p className="text-base font-extrabold text-[#a96618]">
+              ৳{Number(tool.rental_price_per_day).toLocaleString()}
+            </p>
+
+            <p className="text-[10px] font-medium text-[#aaa39a]">per day</p>
+          </div>
         </div>
 
-        {/* DESCRIPTION */}
+        {/* ================= META ================= */}
 
-        <p className="mt-4 line-clamp-2 text-sm leading-6 text-white/45">
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="rounded-full bg-[#f7f4ef] px-2.5 py-1 text-[10px] font-semibold text-[#8c837a]">
+            Condition: {tool.condition}
+          </span>
+
+          <span className="rounded-full bg-[#f7f4ef] px-2.5 py-1 text-[10px] font-semibold text-[#8c837a]">
+            Category ID: {tool.category_id}
+          </span>
+        </div>
+
+        {/* ================= DESCRIPTION ================= */}
+
+        <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#8c837a]">
           {tool.description}
         </p>
 
-        {/* LOCATION */}
+        {/* ================= ACTIONS ================= */}
 
-        <div className="mt-4 flex items-center gap-1.5 text-sm text-white/40">
-          <MapPin className="h-3.5 w-3.5" />
-          {tool.location}
-        </div>
-
-        {/* ACTIONS */}
-
-        <div className="mt-5 flex gap-2 border-t border-white/[0.06] pt-4">
-          {/* EDIT */}
-
+        <div className="mt-5 grid grid-cols-2 gap-2 border-t border-[#eee8e1] pt-4">
           <button
             type="button"
             onClick={onEdit}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/[0.06] px-3 py-2.5 text-sm text-white/70 transition hover:bg-white/[0.1] hover:text-white"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#e5ddd3] bg-[#fcfaf7] px-3 py-2.5 text-sm font-semibold text-[#51483f] transition hover:border-[#d7a45b] hover:bg-[#fff3dd] hover:text-[#a96618]"
           >
             <Edit3 className="h-4 w-4" />
             Edit
           </button>
 
-          {/* DELETE */}
-
           <button
             type="button"
             onClick={onDelete}
             disabled={deleting}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500/10 px-3 py-2.5 text-sm text-red-400 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#f5c2c7] bg-[#fff3f4] px-3 py-2.5 text-sm font-semibold text-[#c63c4a] transition hover:bg-[#ffe5e8] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {deleting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -805,7 +880,7 @@ function ToolCard({
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -815,14 +890,14 @@ function ToolCard({
 
 function StatusBadge({ status }: { status: Tool["status"] }) {
   const styles: Record<Tool["status"], string> = {
-    pending: "bg-yellow-500/10 text-yellow-400",
-    approved: "bg-green-500/10 text-green-400",
-    rejected: "bg-red-500/10 text-red-400",
+    pending: "border-[#f1d39b] bg-[#fff8e8] text-[#b7791f]",
+    approved: "border-[#b7e4c7] bg-[#effaf2] text-[#16803c]",
+    rejected: "border-[#f5c2c7] bg-[#fff3f4] text-[#c63c4a]",
   };
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${styles[status]}`}
+      className={`rounded-full border px-2.5 py-1.5 text-[10px] font-bold capitalize shadow-sm ${styles[status]}`}
     >
       {status}
     </span>
