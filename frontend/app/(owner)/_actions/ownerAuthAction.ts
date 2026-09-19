@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// ==================== LOGIN ====================
+// LOGIN 
 
 export interface OwnerLoginData {
   email: string;
@@ -13,7 +13,7 @@ export interface OwnerLoginResponse {
   access_token: string;
 }
 
-// ==================== REGISTER ====================
+// REGISTER 
 
 export interface OwnerRegisterData {
   name: string;
@@ -29,7 +29,7 @@ export interface OwnerRegisterResponse {
   access_token?: string;
 }
 
-// ==================== LOGIN ACTION ====================
+// LOGIN ACTION 
 
 export async function loginOwner(
   data: OwnerLoginData,
@@ -42,7 +42,7 @@ export async function loginOwner(
   return response.data;
 }
 
-// ==================== REGISTER ACTION ====================
+// REGISTER ACTION 
 
 export async function registerOwner(
   data: OwnerRegisterData,

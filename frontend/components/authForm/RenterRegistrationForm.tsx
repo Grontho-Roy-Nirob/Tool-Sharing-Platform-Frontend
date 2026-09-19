@@ -47,7 +47,7 @@ const RenterRegistrationForm = () => {
           : undefined,
     });
 
-    // ==================== ZOD VALIDATION ====================
+    // ZOD VALIDATION
     if (!result.success) {
       const fieldErrors: {
         fullName?: string;
@@ -74,18 +74,18 @@ const RenterRegistrationForm = () => {
       return;
     }
 
-    // ==================== API CALL ====================
+    // API CALL 
     try {
       const response = await registerRenter(result.data);
 
       console.log("Registration successful:", response);
 
-      // ==================== SUCCESS TOAST ====================
+      // SUCCESS TOAST 
       toast.success("Registration successful!", {
         description: "Your ToolShare renter account has been created.",
       });
 
-      // ==================== GO TO LOGIN PAGE ====================
+      // GO TO LOGIN PAGE 
       router.push("/renter");
     } catch (error) {
       console.error("Registration error:", error);

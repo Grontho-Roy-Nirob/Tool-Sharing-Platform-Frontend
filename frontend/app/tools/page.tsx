@@ -88,8 +88,7 @@ export default function ToolsPage() {
     );
   }, [tools]);
 
-  /* ================= FILTER + SEARCH + SORT ================= */
-
+  /* FILTER + SEARCH + SORT  */
   const filteredTools = useMemo(() => {
     let result = [...tools];
 
@@ -170,7 +169,7 @@ export default function ToolsPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-white via-[#FCF9FF] to-[#F3CCFF]/25 px-4 pb-24 pt-32 text-[#281832] sm:px-8">
-      {/* ================= BACKGROUND GLOW ================= */}
+      {/* BACKGROUND GLOW */}
 
       <div className="pointer-events-none absolute left-[-180px] top-[120px] h-[380px] w-[380px] rounded-full bg-[#E9D5FF]/30 blur-[120px]" />
 
@@ -179,7 +178,7 @@ export default function ToolsPage() {
       <div className="pointer-events-none absolute bottom-[100px] left-[35%] h-[300px] w-[300px] rounded-full bg-[#E9D5FF]/20 blur-[120px]" />
 
       <div className="relative z-10 mx-auto max-w-[1280px]">
-        {/* ================= HEADER ================= */}
+        {/* HEADER  */}
 
         <motion.div
           initial={{ opacity: 0, y: 25 }}
@@ -208,18 +207,15 @@ export default function ToolsPage() {
           </p>
         </motion.div>
 
-        {/* ================================================= */}
-        {/* PREMIUM SEARCH + FILTER AREA */}
-        {/* ================================================= */}
 
+        {/* PREMIUM SEARCH + FILTER AREA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.1 }}
           className="mt-10"
         >
-          {/* ================= SEARCH ================= */}
-
+          {/*  SEARCH  */}
           <div className="relative">
             {/* Gradient border */}
             <div className="absolute -inset-[1px] rounded-[24px] bg-gradient-to-r from-[#C084FC]/70 via-[#E9D5FF] to-[#FDE68A]/70 opacity-80 blur-[1px]" />
@@ -249,7 +245,7 @@ export default function ToolsPage() {
             </div>
           </div>
 
-          {/* ================= FILTER PANEL ================= */}
+          {/* FILTER PANEL  */}
 
           <div className="relative mt-4 overflow-hidden rounded-[26px] border border-[#E4D5EF] bg-white/75 p-3 shadow-[0_14px_40px_rgba(92,45,130,0.08)] backdrop-blur-xl">
             {/* top gradient line */}
@@ -272,7 +268,7 @@ export default function ToolsPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {/* ================= CATEGORY ================= */}
+              {/* CATEGORY  */}
 
               <div className="group relative">
                 <div className="mb-1.5 flex items-center gap-1.5 px-1">
@@ -304,7 +300,7 @@ export default function ToolsPage() {
                 </div>
               </div>
 
-              {/* ================= LOCATION ================= */}
+              {/* LOCATION */}
 
               <div className="group relative">
                 <div className="mb-1.5 flex items-center gap-1.5 px-1">
@@ -336,7 +332,7 @@ export default function ToolsPage() {
                 </div>
               </div>
 
-              {/* ================= AVAILABILITY ================= */}
+              {/* AVAILABILITY  */}
 
               <div className="group relative">
                 <div className="mb-1.5 flex items-center gap-1.5 px-1">
@@ -366,7 +362,7 @@ export default function ToolsPage() {
                 </div>
               </div>
 
-              {/* ================= SORT ================= */}
+              {/* SORT  */}
 
               <div className="group relative">
                 <div className="mb-1.5 flex items-center gap-1.5 px-1">
@@ -400,7 +396,7 @@ export default function ToolsPage() {
             </div>
           </div>
 
-          {/* ================= ACTIVE FILTER ================= */}
+          {/* ACTIVE FILTER  */}
 
           {hasFilters && (
             <motion.div
@@ -432,7 +428,7 @@ export default function ToolsPage() {
           )}
         </motion.div>
 
-        {/* ================= LOADING ================= */}
+        {/* LOADING */}
 
         {loading && (
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -459,7 +455,7 @@ export default function ToolsPage() {
           </div>
         )}
 
-        {/* ================= ERROR ================= */}
+        {/* ERROR  */}
 
         {!loading && error && (
           <motion.div
@@ -481,7 +477,7 @@ export default function ToolsPage() {
           </motion.div>
         )}
 
-        {/* ================= EMPTY ================= */}
+        {/* EMPTY  */}
 
         {!loading && !error && filteredTools.length === 0 && (
           <motion.div
@@ -513,7 +509,7 @@ export default function ToolsPage() {
           </motion.div>
         )}
 
-        {/* ================= TOOLS ================= */}
+        {/* TOOLS  */}
 
         {!loading && !error && filteredTools.length > 0 && (
           <div className="relative mt-9">

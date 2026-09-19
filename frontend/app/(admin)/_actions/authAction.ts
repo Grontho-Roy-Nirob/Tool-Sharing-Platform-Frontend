@@ -1,7 +1,6 @@
 import adminApi from "@/lib/adminAxios";
 
-// ==================== LOGIN ====================
-
+// LOGIN 
 export interface AdminLoginData {
   email: string;
   password: string;
@@ -19,8 +18,7 @@ export interface AdminLoginResponse {
   };
 }
 
-// ==================== LOGIN ACTION ====================
-
+// LOGIN ACTION 
 export async function loginAdmin(
   data: AdminLoginData,
 ): Promise<AdminLoginResponse> {

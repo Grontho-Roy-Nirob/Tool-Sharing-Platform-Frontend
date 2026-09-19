@@ -14,7 +14,7 @@ const RenterLoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ==================== ERROR STATE ====================
+  // ERROR STATE 
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
@@ -28,7 +28,7 @@ const RenterLoginForm = () => {
 
     const formData = new FormData(event.currentTarget);
 
-    // ==================== ZOD VALIDATION ====================
+    // ZOD VALIDATION 
     const result = loginSchema.safeParse({
       email: formData.get("email"),
       password: formData.get("password"),
@@ -56,7 +56,7 @@ const RenterLoginForm = () => {
       return;
     }
 
-    // ==================== API CALL ====================
+    // API CALL 
     try {
       const response = await loginRenter(result.data);
 

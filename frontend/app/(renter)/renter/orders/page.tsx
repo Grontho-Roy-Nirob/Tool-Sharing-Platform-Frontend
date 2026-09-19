@@ -24,8 +24,7 @@ import QuickActions from "../../../../components/dashboard/renter/QuickActions";
 
 import api from "../../../../lib/axios";
 
-// ================= RENTER =================
-
+// RENTER 
 interface Renter {
   renterId: number;
   fullName: string;
@@ -33,8 +32,7 @@ interface Renter {
   profileImage?: string;
 }
 
-// ================= JWT =================
-
+// JWT 
 interface RenterToken {
   sub: number;
   email: string;
@@ -43,23 +41,18 @@ interface RenterToken {
   exp: number;
 }
 
-// ================= COMPONENT =================
-
+// COMPONENT 
 export default function RenterDashboard() {
   const [renter, setRenter] = useState<Renter | null>(null);
   const [orders, setOrders] = useState<RenterOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ================= RECENT ORDERS VISIBILITY =================
-
+  // RECENT ORDERS VISIBILITY 
   const [showRecentOrders, setShowRecentOrders] = useState(true);
 
-  // ================= LOAD DASHBOARD DATA =================
-
+  // LOAD DASHBOARD DATA 
   useEffect(() => {
-    // Load saved Recent Orders visibility
-
     const savedVisibility = localStorage.getItem(
       "renter_recent_orders_visible",
     );
@@ -73,26 +66,21 @@ export default function RenterDashboard() {
         setLoading(true);
         setError("");
 
-        // ================= TOKEN =================
-
+        // TOKEN 
         const token = localStorage.getItem("access_token");
 
         if (!token) {
           return;
         }
 
-        // ================= DECODE TOKEN =================
-
+        //  DECODE TOKEN 
         const decoded = jwtDecode<RenterToken>(token);
-
         const renterId = decoded.sub;
 
-        // ================= GET RENTER PROFILE =================
-
+        // GET RENTER PROFILE 
         const renterResponse = await api.get(`/renter/${renterId}`);
 
-        // ================= GET RENTER ORDERS =================
-
+        // GET RENTER ORDERS 
         const ordersResponse = await api.get("/renter/orders");
 
         setRenter(renterResponse.data);
@@ -109,7 +97,7 @@ export default function RenterDashboard() {
     fetchDashboardData();
   }, []);
 
-  // ================= ORDER COUNTS =================
+  // ORDER COUNTS 
 
   const pendingOrders = orders.filter(
     (order) => order.status === "pending",
@@ -123,7 +111,7 @@ export default function RenterDashboard() {
     (order) => order.status === "completed",
   ).length;
 
-  // ================= HIDE / SHOW FUNCTION =================
+  // HIDE / SHOW FUNCTION 
 
   const toggleRecentOrders = () => {
     const newValue = !showRecentOrders;
@@ -133,38 +121,25 @@ export default function RenterDashboard() {
     localStorage.setItem("renter_recent_orders_visible", String(newValue));
   };
 
-  // ================= RETURN =================
-
   return (
     <RenterProtected>
       <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
-        {/* ================================================= */}
-        {/* ================= SIDEBAR ======================= */}
-        {/* ================================================= */}
 
+        {/* SIDEBAR */}
         <RenterSidebar />
 
-        {/* ================================================= */}
-        {/* ================= MAIN AREA ===================== */}
-        {/* ================================================= */}
 
+        {/*  MAIN AREA  */}
         <div className="pt-[72px] lg:ml-[280px] lg:pt-0">
-          {/* ================================================= */}
-          {/* ================= HEADER ======================== */}
-          {/* ================================================= */}
-
+          {/* HEADER */}
           <RenterHeader renter={renter} />
 
-          {/* ================================================= */}
-          {/* ================= PAGE CONTENT ================== */}
-          {/* ================================================= */}
 
+          {/*  PAGE CONTENT  */}
           <main className="px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
             <div className="mx-auto max-w-[1280px]">
-              {/* ================================================= */}
-              {/* ================= HERO ========================== */}
-              {/* ================================================= */}
 
+              {/* HERO  */}
               <section className="relative mb-6 overflow-hidden rounded-[24px] bg-[#292722] shadow-[0_12px_32px_rgba(41,39,34,0.12)]">
                 {/* Decorative Shapes */}
 
@@ -207,10 +182,8 @@ export default function RenterDashboard() {
                 </div>
               </section>
 
-              {/* ================================================= */}
-              {/* ================= LOADING ======================== */}
-              {/* ================================================= */}
 
+              {/* LOADING */}
               {loading && (
                 <div className="space-y-5">
                   {/* STATISTICS SKELETON */}
@@ -225,33 +198,24 @@ export default function RenterDashboard() {
                   </div>
 
                   {/* RECENT ORDERS SKELETON */}
-
                   <div className="h-[350px] animate-pulse rounded-[22px] bg-white" />
                 </div>
               )}
 
-              {/* ================================================= */}
-              {/* ================= ERROR ========================= */}
-              {/* ================================================= */}
 
+              {/* ERROR  */}
               {!loading && error && (
                 <div className="rounded-[18px] border border-[#f2c6c2] bg-[#fff5f3] px-4 py-3 text-sm font-medium text-[#c1502e]">
                   {error}
                 </div>
               )}
 
-              {/* ================================================= */}
-              {/* ================= DASHBOARD ===================== */}
-              {/* ================================================= */}
-
+              {/*DASHBOARD */}
               {!loading && !error && (
                 <>
-                  {/* ================================================= */}
-                  {/* ================= STATISTICS ==================== */}
-                  {/* ================================================= */}
-
+                  {/* STATISTICS */}
                   <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {/* ================= TOTAL ORDERS ================= */}
+                    {/* TOTAL ORDERS  */}
 
                     <div className="group relative overflow-hidden rounded-[18px] bg-white p-4 shadow-[0_6px_22px_rgba(55,45,30,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(55,45,30,0.08)]">
                       <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[#e8a33d]/10 transition-transform duration-500 group-hover:scale-125" />
@@ -277,7 +241,7 @@ export default function RenterDashboard() {
                       </p>
                     </div>
 
-                    {/* ================= PENDING ================= */}
+                    {/* PENDING */}
 
                     <div className="group relative overflow-hidden rounded-[18px] bg-white p-4 shadow-[0_6px_22px_rgba(55,45,30,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(55,45,30,0.08)]">
                       <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[#f59e0b]/8 transition-transform duration-500 group-hover:scale-125" />
@@ -303,7 +267,7 @@ export default function RenterDashboard() {
                       </p>
                     </div>
 
-                    {/* ================= ACTIVE ================= */}
+                    {/* ACTIVE  */}
 
                     <div className="group relative overflow-hidden rounded-[18px] bg-white p-4 shadow-[0_6px_22px_rgba(55,45,30,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(55,45,30,0.08)]">
                       <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[#22c55e]/8 transition-transform duration-500 group-hover:scale-125" />
@@ -329,7 +293,7 @@ export default function RenterDashboard() {
                       </p>
                     </div>
 
-                    {/* ================= COMPLETED ================= */}
+                    {/* COMPLETED  */}
 
                     <div className="group relative overflow-hidden rounded-[18px] bg-white p-4 shadow-[0_6px_22px_rgba(55,45,30,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(55,45,30,0.08)]">
                       <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[#c1502e]/7 transition-transform duration-500 group-hover:scale-125" />
@@ -356,12 +320,10 @@ export default function RenterDashboard() {
                     </div>
                   </section>
 
-                  {/* ================================================= */}
-                  {/* ================= RECENT ORDERS ================= */}
-                  {/* ================================================= */}
 
+                  {/* RECENT ORDERS */}
                   <section className="mt-5 overflow-hidden rounded-[22px] bg-white shadow-[0_8px_28px_rgba(55,45,30,0.055)]">
-                    {/* ================= HEADER ================= */}
+                    {/* HEADER  */}
 
                     <div className="flex flex-col gap-3 border-b border-[#eee8e1] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                       <div>
@@ -380,11 +342,10 @@ export default function RenterDashboard() {
                         </p>
                       </div>
 
-                      {/* ================= ACTIONS ================= */}
+                      {/* ACTIONS */}
 
                       <div className="flex items-center gap-2">
                         {/* HIDE / SHOW */}
-
                         <button
                           type="button"
                           onClick={toggleRecentOrders}
@@ -415,17 +376,14 @@ export default function RenterDashboard() {
                       </div>
                     </div>
 
-                    {/* ================================================= */}
-                    {/* ================= ORDERS CONTENT ================= */}
-                    {/* ================================================= */}
 
+                    {/* ORDERS CONTENT */}
                     {showRecentOrders ? (
                       <div className="p-3.5 sm:p-4">
                         <RecentOrders orders={orders} />
                       </div>
                     ) : (
-                      /* ================= HIDDEN STATE ================= */
-
+                      /* HIDDEN STATE  */
                       <div className="flex min-h-[150px] items-center justify-center px-5 py-8">
                         <div className="text-center">
                           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#f4f1ec] text-[#8c837a]">
@@ -460,10 +418,8 @@ export default function RenterDashboard() {
                     )}
                   </section>
 
-                  {/* ================================================= */}
-                  {/* ================= BOTTOM NOTE =================== */}
-                  {/* ================================================= */}
 
+                  {/* BOTTOM NOTE */}
                   <div className="mt-5 flex items-center justify-center gap-2">
                     <div className="h-1 w-1 rounded-full bg-[#c1502e]" />
 

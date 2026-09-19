@@ -237,11 +237,9 @@ export function Navbar() {
   };
 
   /* USER INITIAL */
-
   const userInitial = user?.fullName?.charAt(0)?.toUpperCase() || "U";
 
   /* ACTIVE NAV ITEM */
-
   const isNavItemActive = (item: { label: string; href: string }) => {
     // Home
     if (item.href === "/") {
@@ -371,7 +369,6 @@ export function Navbar() {
         </Link>
 
         {/* DESKTOP NAVIGATION */}
-
         <div className="hidden md:flex md:flex-1 md:items-center md:justify-center">
           <div className="flex items-center gap-1">
             {navItems.map((item) => {
@@ -430,7 +427,6 @@ export function Navbar() {
         </div>
 
         {/* DESKTOP ACTIONS */}
-
         <div className="ml-auto hidden items-center gap-3 md:flex">
           {authLoading ? (
             <div
@@ -514,7 +510,6 @@ export function Navbar() {
               </Link>
 
               {/* Logout */}
-
               <button
                 type="button"
                 onClick={handleLogout}
@@ -535,7 +530,6 @@ export function Navbar() {
           ) : (
             <>
               {/* Sign In */}
-
               <Link
                 href="/login"
                 className="
@@ -550,7 +544,6 @@ export function Navbar() {
               </Link>
 
               {/* Get Started */}
-
               <Link
                 href="/register"
                 className="
@@ -572,7 +565,6 @@ export function Navbar() {
         </div>
 
         {/* MOBILE MENU BUTTON */}
-
         <button
           type="button"
           aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -596,7 +588,6 @@ export function Navbar() {
         </button>
 
         {/* MOBILE MENU */}
-
         {mobileMenuOpen && (
           <div
             className="
@@ -613,7 +604,6 @@ export function Navbar() {
           >
             <div className="flex flex-col gap-1">
               {/* Mobile Nav Items */}
-
               {navItems.map((item) => {
                 const active = isNavItemActive(item);
 
@@ -651,7 +641,6 @@ export function Navbar() {
               <div className="my-2 h-px bg-[#211F1C]/10" />
 
               {/* Mobile Loading */}
-
               {authLoading ? (
                 <div
                   className="
@@ -716,7 +705,6 @@ export function Navbar() {
                   </div>
 
                   {/* Dashboard */}
-
                   <Link
                     href={user.dashboardUrl}
                     onClick={() => setMobileMenuOpen(false)}
@@ -735,7 +723,6 @@ export function Navbar() {
                   </Link>
 
                   {/* Profile */}
-
                   <Link
                     href={user.role === "owner" ? "/owner/profile" : "/"}
                     onClick={() => setMobileMenuOpen(false)}

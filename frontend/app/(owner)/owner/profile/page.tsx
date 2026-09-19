@@ -48,7 +48,6 @@ interface Owner {
 }
 
 // JWT
-
 interface OwnerToken {
   email?: string;
   password?: string;
@@ -57,7 +56,6 @@ interface OwnerToken {
 }
 
 // PROFILE FORM
-
 interface ProfileForm {
   name: string;
   email: string;
@@ -68,7 +66,6 @@ interface ProfileForm {
 }
 
 // PROFILE IMAGE URL
-
 const getProfileImageUrl = (image?: string) => {
   if (!image) {
     return "";
@@ -94,7 +91,6 @@ const getProfileImageUrl = (image?: string) => {
 };
 
 // COMPONENT
-
 export default function OwnerProfilePage() {
   const [owner, setOwner] = useState<Owner | null>(null);
 
@@ -114,7 +110,6 @@ export default function OwnerProfilePage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // FETCH OWNER PROFILE
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -177,7 +172,6 @@ export default function OwnerProfilePage() {
   }, []);
 
   // INPUT CHANGE
-
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
 
@@ -188,7 +182,6 @@ export default function OwnerProfilePage() {
   };
 
   // IMAGE CHANGE
-
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
 
@@ -197,7 +190,6 @@ export default function OwnerProfilePage() {
     }
 
     // FILE SIZE
-
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Profile image must be less than 2MB");
       event.target.value = "";
@@ -205,7 +197,6 @@ export default function OwnerProfilePage() {
     }
 
     // FILE TYPE
-
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(file.type)) {
@@ -231,7 +222,6 @@ export default function OwnerProfilePage() {
   };
 
   // CLEAN IMAGE PREVIEW
-
   useEffect(() => {
     return () => {
       if (imagePreview) {
@@ -241,7 +231,6 @@ export default function OwnerProfilePage() {
   }, [imagePreview]);
 
   // SUBMIT
-
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -254,7 +243,6 @@ export default function OwnerProfilePage() {
   };
 
   // CONFIRM UPDATE
-
   const handleConfirmUpdate = async () => {
     if (!owner?.id) {
       toast.error("Owner information not found");
@@ -341,23 +329,19 @@ export default function OwnerProfilePage() {
   };
 
   // RETURN
-
   return (
     <OwnerProtected>
       <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
         {/* SIDEBAR */}
-
         <OwnerSidebar />
 
         {/* MAIN AREA */}
-
         <div className="pt-[68px] lg:ml-[280px] lg:pt-0">
+          
           {/* HEADER */}
-
           <OwnerHeader owner={owner} />
 
           {/* PAGE CONTENT */}
-
           <main className="px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
             <div className="mx-auto max-w-[1350px]">
               {/* PROFILE HERO */}
@@ -420,7 +404,6 @@ export default function OwnerProfilePage() {
               </section>
 
               {/* LOADING */}
-
               {loading ? (
                 <div className="flex min-h-[320px] items-center justify-center rounded-[28px] bg-white shadow-[0_12px_35px_rgba(76,57,30,0.07)]">
                   <div className="flex flex-col items-center gap-3">

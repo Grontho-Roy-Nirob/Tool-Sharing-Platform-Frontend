@@ -36,10 +36,8 @@ import {
   AlertDialogTitle,
 } from "../../../../components/ui/alert-dialog";
 
-// ==========================================
-// RENTER
-// ==========================================
 
+// RENTER
 interface Renter {
   renterId: number;
   fullName: string;
@@ -52,10 +50,8 @@ interface Renter {
   updatedAt: string;
 }
 
-// ==========================================
-// JWT
-// ==========================================
 
+// JWT
 interface RenterToken {
   sub: number;
   email: string;
@@ -64,10 +60,8 @@ interface RenterToken {
   exp: number;
 }
 
-// ==========================================
-// PROFILE FORM
-// ==========================================
 
+// PROFILE FORM
 interface ProfileForm {
   fullName: string;
   email: string;
@@ -76,10 +70,8 @@ interface ProfileForm {
   password: string;
 }
 
-// ==========================================
-// COMPONENT
-// ==========================================
 
+// COMPONENT
 export default function RenterProfilePage() {
   const [renter, setRenter] = useState<Renter | null>(null);
 
@@ -91,32 +83,23 @@ export default function RenterProfilePage() {
     password: "",
   });
 
-  // ==========================================
-  // IMAGE STATES
-  // ==========================================
 
+  // IMAGE STATES
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // NEW:
-  // Image load না হলে fallback দেখানোর জন্য
   const [imageLoadError, setImageLoadError] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ==========================================
-  // API URL
-  // ==========================================
 
+  // API URL
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
 
-  // ==========================================
-  // FETCH RENTER PROFILE
-  // ==========================================
 
+  // FETCH RENTER PROFILE
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -151,10 +134,8 @@ export default function RenterProfilePage() {
           password: "",
         });
 
-        // ==========================================
-        // EXISTING PROFILE IMAGE
-        // ==========================================
 
+        // EXISTING PROFILE IMAGE
         if (data.profileImage) {
           setImageLoadError(false);
 
@@ -176,10 +157,8 @@ export default function RenterProfilePage() {
     fetchProfile();
   }, [API_URL]);
 
-  // ==========================================
+ 
   // CLEANUP IMAGE PREVIEW
-  // ==========================================
-
   useEffect(() => {
     return () => {
       if (imagePreview?.startsWith("blob:")) {
@@ -188,10 +167,8 @@ export default function RenterProfilePage() {
     };
   }, [imagePreview]);
 
-  // ==========================================
-  // INPUT CHANGE
-  // ==========================================
 
+  // INPUT CHANGE
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
 
@@ -201,10 +178,8 @@ export default function RenterProfilePage() {
     }));
   };
 
-  // ==========================================
-  // IMAGE CHANGE
-  // ==========================================
 
+  // IMAGE CHANGE
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
@@ -212,10 +187,7 @@ export default function RenterProfilePage() {
       return;
     }
 
-    // ==========================================
     // FILE TYPE VALIDATION
-    // ==========================================
-
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(file.type)) {
@@ -225,10 +197,8 @@ export default function RenterProfilePage() {
       return;
     }
 
-    // ==========================================
-    // FILE SIZE VALIDATION
-    // ==========================================
 
+    // FILE SIZE VALIDATION
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Image size must be less than 2MB");
 
@@ -236,28 +206,19 @@ export default function RenterProfilePage() {
       return;
     }
 
-    // ==========================================
+
     // SET IMAGE FILE
-    // ==========================================
-
     setImageFile(file);
-
-    // নতুন image select করলে আগের error remove
     setImageLoadError(false);
 
-    // ==========================================
+   
     // CREATE PREVIEW
-    // ==========================================
-
     const previewUrl = URL.createObjectURL(file);
-
     setImagePreview(previewUrl);
   };
 
-  // ==========================================
-  // SUBMIT
-  // ==========================================
 
+  // SUBMIT
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -266,19 +227,15 @@ export default function RenterProfilePage() {
       return;
     }
 
-    // ==========================================
-    // PASSWORD VALIDATION
-    // ==========================================
 
+    // PASSWORD VALIDATION
     if (form.password && form.password.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
     }
 
-    // ==========================================
-    // NID VALIDATION
-    // ==========================================
 
+    // NID VALIDATION
     if (!/^\d{10}$/.test(form.nidNumber)) {
       toast.error("NID number must be exactly 10 digits");
       return;
@@ -287,10 +244,8 @@ export default function RenterProfilePage() {
     setShowConfirm(true);
   };
 
-  // ==========================================
+  
   // CONFIRM UPDATE
-  // ==========================================
-
   const handleConfirmUpdate = async () => {
     try {
       setSaving(true);
@@ -306,10 +261,7 @@ export default function RenterProfilePage() {
       const decoded = jwtDecode<RenterToken>(token);
       const renterId = decoded.sub;
 
-      // ==========================================
       // FORM DATA
-      // ==========================================
-
       const formData = new FormData();
 
       formData.append("fullName", form.fullName);
@@ -324,22 +276,14 @@ export default function RenterProfilePage() {
         formData.append("password", form.password);
       }
 
-      // ==========================================
-      // PROFILE IMAGE
-      // ==========================================
 
+      // PROFILE IMAGE
       if (imageFile) {
-        // Backend:
-        // FileInterceptor('profileImage')
-        //
-        // তাই এখানে profileImage দিতে হবে
         formData.append("profileImage", imageFile);
       }
 
-      // ==========================================
-      // PATCH REQUEST
-      // ==========================================
 
+      // PATCH REQUEST
       const response = await api.patch<Renter>(
         `/renter/${renterId}`,
         formData,
@@ -350,12 +294,9 @@ export default function RenterProfilePage() {
         },
       );
 
-      // ==========================================
+
       // UPDATED RENTER
-      // ==========================================
-
       setRenter(response.data);
-
       setForm({
         fullName: response.data.fullName ?? "",
         email: response.data.email ?? "",
@@ -364,10 +305,8 @@ export default function RenterProfilePage() {
         password: "",
       });
 
-      // ==========================================
-      // UPDATE IMAGE PREVIEW
-      // ==========================================
 
+      // UPDATE IMAGE PREVIEW
       if (response.data.profileImage) {
         setImageLoadError(false);
 
@@ -382,10 +321,8 @@ export default function RenterProfilePage() {
       setImageFile(null);
       setShowConfirm(false);
 
-      // ==========================================
-      // SUCCESS MESSAGE
-      // ==========================================
 
+      // SUCCESS MESSAGE
       toast.success(
         form.password
           ? "Profile, image and password updated successfully"
@@ -408,39 +345,27 @@ export default function RenterProfilePage() {
     }
   };
 
-  // ==========================================
-  // RETURN
-  // ==========================================
 
+  // RETURN
   return (
     <RenterProtected>
       <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
-        {/* ==========================================
-            SIDEBAR
-        ========================================== */}
+        {/* SIDEBAR */}
 
         <RenterSidebar />
 
-        {/* ==========================================
-            MAIN AREA
-        ========================================== */}
+        {/* MAIN AREA */}
 
         <div className="pt-[68px] lg:ml-[280px] lg:pt-0">
-          {/* ==========================================
-              HEADER
-          ========================================== */}
+          {/* HEADER */}
 
           <RenterHeader renter={renter} />
 
-          {/* ==========================================
-              PAGE CONTENT
-          ========================================== */}
+          {/* PAGE CONTENT */}
 
           <main className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
             <div className="mx-auto max-w-[1350px]">
-              {/* ==========================================
-                  PROFILE HERO
-              ========================================== */}
+              {/* PROFILE HERO */}
 
               <section className="relative mb-7 overflow-hidden rounded-[26px] bg-gradient-to-br from-[#18191c] via-[#222327] to-[#2b2d31] shadow-[0_16px_40px_rgba(20,20,20,0.14)]">
                 <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-white/[0.045]" />
@@ -499,9 +424,7 @@ export default function RenterProfilePage() {
                 </div>
               </section>
 
-              {/* ==========================================
-                  LOADING
-              ========================================== */}
+              {/* LOADING */}
 
               {loading ? (
                 <div className="flex min-h-[320px] items-center justify-center rounded-[28px] bg-white shadow-[0_12px_35px_rgba(76,57,30,0.07)]">
@@ -517,20 +440,14 @@ export default function RenterProfilePage() {
                 </div>
               ) : (
                 <div className="grid items-start gap-5 lg:grid-cols-[290px_1fr]">
-                  {/* ==========================================
-                      LEFT PROFILE CARD
-                  ========================================== */}
+                  {/* LEFT PROFILE CARD */}
 
                   <section className="overflow-hidden rounded-[28px] border border-[#e7e3dc] bg-gradient-to-br from-white via-[#fffdf9] to-[#f3efe8] p-5 shadow-[0_12px_35px_rgba(76,57,30,0.07)]">
                     <div className="flex flex-col items-center text-center">
-                      {/* ==========================================
-                          PROFILE IMAGE
-                      ========================================== */}
+                      {/* PROFILE IMAGE */}
 
                       <div className="relative h-28 w-28 shrink-0">
-                        {/* ========================================
-                            FIXED 112x112 CONTAINER
-                        ======================================== */}
+                        {/* FIXED 112x112 CONTAINER */}
 
                         {imagePreview && !imageLoadError ? (
                           <img
@@ -538,16 +455,12 @@ export default function RenterProfilePage() {
                             alt={renter?.fullName || "Renter"}
                             className="block h-28 w-28 rounded-[28px] object-cover shadow-[0_10px_25px_rgba(50,50,50,0.13)]"
                             onError={() => {
-                              // Image load না হলে container থাকবে
-                              // শুধু fallback দেখাবে
                               setImageLoadError(true);
                             }}
                           />
                         ) : (
-                          // ========================================
+                
                           // FALLBACK
-                          // ========================================
-
                           <div className="flex h-28 w-28 items-center justify-center rounded-[28px] bg-gradient-to-br from-[#55575b] to-[#242528] text-4xl font-bold text-white shadow-[0_10px_25px_rgba(35,35,35,0.18)]">
                             {renter?.fullName
                               ? renter.fullName.charAt(0).toUpperCase()
@@ -555,18 +468,14 @@ export default function RenterProfilePage() {
                           </div>
                         )}
 
-                        {/* ==========================================
-                            VERIFIED ICON
-                        ========================================== */}
+                        {/* VERIFIED ICON */}
 
                         <div className="absolute -bottom-2 -right-2 z-10 flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-[0_5px_15px_rgba(76,57,30,0.14)]">
                           <CheckCircle2 className="h-4 w-4 text-[#55575b]" />
                         </div>
                       </div>
 
-                      {/* ==========================================
-                          IMAGE UPLOAD BUTTON
-                      ========================================== */}
+                      {/* IMAGE UPLOAD BUTTON */}
 
                       <label
                         htmlFor="profileImage"
@@ -589,9 +498,7 @@ export default function RenterProfilePage() {
                         JPG, JPEG, PNG or WEBP • Max 2MB
                       </p>
 
-                      {/* ==========================================
-                          SELECTED IMAGE NAME
-                      ========================================== */}
+                      {/* SELECTED IMAGE NAME */}
 
                       {imageFile && (
                         <div className="mt-2 flex max-w-full items-center gap-1.5 text-[10px] font-medium text-[#55575b]">
@@ -603,9 +510,7 @@ export default function RenterProfilePage() {
                         </div>
                       )}
 
-                      {/* ==========================================
-                          NAME
-                      ========================================== */}
+                      {/* NAME */}
 
                       <h2 className="mt-5 text-lg font-bold text-[#292722]">
                         {renter?.fullName || "Renter"}
@@ -616,9 +521,7 @@ export default function RenterProfilePage() {
                       </p>
                     </div>
 
-                    {/* ==========================================
-                        PROFILE INFO
-                    ========================================== */}
+                    {/* PROFILE INFO */}
 
                     <div className="mt-6 space-y-2.5">
                       {/* RENTER ID */}
@@ -704,10 +607,7 @@ export default function RenterProfilePage() {
                     </div>
                   </section>
 
-                  {/* ==========================================
-                      RIGHT FORM
-                  ========================================== */}
-
+                  {/* RIGHT FORM */}
                   <section className="rounded-[28px] border border-[#e7e3dc] bg-gradient-to-br from-white via-[#fffdf9] to-[#f4f0e9] p-5 shadow-[0_12px_35px_rgba(76,57,30,0.07)] sm:p-6">
                     <div className="mb-6 flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#f0eee9] to-[#dedbd4]">
@@ -931,9 +831,7 @@ export default function RenterProfilePage() {
                 </div>
               )}
 
-              {/* ==========================================
-                  CONFIRMATION DIALOG
-              ========================================== */}
+              {/* CONFIRMATION DIALOG */}
 
               <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
                 <AlertDialogContent className="rounded-[28px] border-0 bg-[#fffdf9] shadow-[0_25px_70px_rgba(45,43,38,0.18)]">
