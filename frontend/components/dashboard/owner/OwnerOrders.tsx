@@ -5,6 +5,8 @@ import {
   CalendarDays,
   Check,
   Clock,
+  Eye,
+  EyeOff,
   Loader2,
   MapPin,
   Package,
@@ -15,10 +17,7 @@ import { toast } from "sonner";
 
 import api from "@/lib/axios";
 
-// ======================================================
 // TOOL
-// ======================================================
-
 interface Tool {
   id: number;
   tool_name: string;
@@ -28,10 +27,7 @@ interface Tool {
   tool_image?: string;
 }
 
-// ======================================================
 // RENTER
-// ======================================================
-
 interface Renter {
   renterId: number;
   name: string;
@@ -39,10 +35,7 @@ interface Renter {
   phone?: string;
 }
 
-// ======================================================
 // ORDER
-// ======================================================
-
 interface Order {
   id: number;
   renter_id: number;
@@ -57,26 +50,36 @@ interface Order {
   created_at: string;
 }
 
-// ======================================================
-// COMPONENT
-// ======================================================
-
+// OWNER ORDERS
 export default function OwnerOrders({ ownerId }: { ownerId: number }) {
   const [orders, setOrders] = useState<Order[]>([]);
-
   const [loading, setLoading] = useState(true);
-
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [hiddenOrders, setHiddenOrders] = useState<number[]>([]);
+  const [showHidden, setShowHidden] = useState(false);
 
-  // ======================================================
-  // GET OWNER ORDERS
-  // ======================================================
+  // LOAD HIDDEN ORDERS
+  useEffect(() => {
+    const savedHiddenOrders = localStorage.getItem("owner_hidden_orders");
 
+    if (!savedHiddenOrders) return;
+
+    try {
+      const parsed = JSON.parse(savedHiddenOrders);
+
+      if (Array.isArray(parsed)) {
+        setHiddenOrders(parsed);
+      }
+    } catch (error) {
+      console.error("Failed to load hidden orders:", error);
+      setHiddenOrders([]);
+    }
+  }, []);
+
+  // FETCH ORDERS
   const fetchOrders = async () => {
     try {
       setLoading(true);
-
-      // ================= GET OWNER ORDERS =================
 
       const response = await api.get<Order[]>(`/owner/orders/${ownerId}`);
 
@@ -96,33 +99,49 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     }
   };
 
-  // ======================================================
-  // INITIAL LOAD
-  // ======================================================
-
+  // FETCH WHEN OWNER ID AVAILABLE
   useEffect(() => {
     if (ownerId) {
       fetchOrders();
     }
   }, [ownerId]);
 
-  // ======================================================
-  // APPROVE ORDER
-  // ======================================================
+  // HIDE ORDER
+  const handleHideOrder = (orderId: number) => {
+    const updatedHiddenOrders = hiddenOrders.includes(orderId)
+      ? hiddenOrders
+      : [...hiddenOrders, orderId];
 
-  const handleApprove = async (orderId: number) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to approve this order?",
+    setHiddenOrders(updatedHiddenOrders);
+
+    localStorage.setItem(
+      "owner_hidden_orders",
+      JSON.stringify(updatedHiddenOrders),
     );
 
-    if (!confirmed) return;
+    toast.success("Order hidden successfully");
+  };
 
+  // SHOW ORDER
+  const handleShowOrder = (orderId: number) => {
+    const updatedHiddenOrders = hiddenOrders.filter((id) => id !== orderId);
+
+    setHiddenOrders(updatedHiddenOrders);
+
+    localStorage.setItem(
+      "owner_hidden_orders",
+      JSON.stringify(updatedHiddenOrders),
+    );
+
+    toast.success("Order restored successfully");
+  };
+
+  // APPROVE
+  const handleApprove = async (orderId: number) => {
     try {
       setActionLoading(orderId);
 
       const response = await api.put<Order>(`/owner/orders/${orderId}/approve`);
-
-      // ================= UPDATE ORDER =================
 
       setOrders((current) =>
         current.map((order) =>
@@ -151,25 +170,14 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     }
   };
 
-  // ======================================================
-  // REJECT ORDER
-  // ======================================================
-
+  // REJECT
   const handleReject = async (orderId: number) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to reject this order?",
-    );
-
-    if (!confirmed) return;
-
     try {
       setActionLoading(orderId);
 
       const response = await api.patch<Order>(
         `/owner/orders/${orderId}/reject`,
       );
-
-      // ================= UPDATE ORDER =================
 
       setOrders((current) =>
         current.map((order) =>
@@ -198,283 +206,626 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     }
   };
 
-  // ======================================================
-  // LOADING
-  // ======================================================
+  // VISIBLE ORDERS
+  const visibleOrders = orders.filter(
+    (order) => !hiddenOrders.includes(order.id),
+  );
 
+  // HIDDEN ORDERS
+  const hiddenOrderList = orders.filter((order) =>
+    hiddenOrders.includes(order.id),
+  );
+
+  // CURRENT ORDERS
+  const currentOrders = showHidden ? hiddenOrderList : visibleOrders;
+
+  // LOADING
   if (loading) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-white/50" />
-      </div>
-    );
-  }
+      <div className="flex min-h-[260px] items-center justify-center">
+        <div className="flex items-center gap-3 rounded-2xl border border-[#ead9d5] bg-[#fffaf8] px-5 py-3 shadow-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-[#6B1E1E]" />
 
-  // ======================================================
-  // EMPTY
-  // ======================================================
-
-  if (orders.length === 0) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-16 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06]">
-          <Package className="h-5 w-5 text-white/30" />
+          <span className="text-sm font-medium text-[#765c58]">
+            Loading orders...
+          </span>
         </div>
-
-        <h3 className="text-base font-medium text-white">No orders yet</h3>
-
-        <p className="mt-1 text-sm text-white/40">
-          You do not have any tool rental orders yet.
-        </p>
       </div>
     );
   }
 
-  // ======================================================
-  // RENDER
-  // ======================================================
-
+  // MAIN
   return (
     <div className="space-y-6">
       {/* ================= HEADER ================= */}
 
-      <div>
-        <h2 className="text-lg font-semibold text-white">Rental Orders</h2>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8B3A3A]">
+            Orders
+          </p>
 
-        <p className="mt-1 text-sm text-white/40">
-          {orders.length} {orders.length === 1 ? "order" : "orders"} for your
-          tools
-        </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#321717]">
+            Rental Orders
+          </h2>
+
+          <p className="mt-1 text-sm text-[#806b67]">
+            Manage rental requests for your tools.
+          </p>
+        </div>
+
+        {/* ================= TABS ================= */}
+
+        <div className="flex w-full rounded-xl border border-[#e4d2ce] bg-[#f7efed] p-1 shadow-sm sm:w-fit">
+          <button
+            type="button"
+            onClick={() => setShowHidden(false)}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold transition-all duration-200 sm:flex-none ${
+              !showHidden
+                ? "bg-[#6B1E1E] text-white shadow-[0_4px_12px_rgba(107,30,30,0.18)]"
+                : "text-[#806965] hover:bg-[#fffaf8] hover:text-[#6B1E1E]"
+            }`}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            Visible
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[9px] ${
+                !showHidden
+                  ? "bg-white/15 text-white"
+                  : "bg-[#eadbd7] text-[#704343]"
+              }`}
+            >
+              {visibleOrders.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowHidden(true)}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold transition-all duration-200 sm:flex-none ${
+              showHidden
+                ? "bg-[#6B1E1E] text-white shadow-[0_4px_12px_rgba(107,30,30,0.18)]"
+                : "text-[#806965] hover:bg-[#fffaf8] hover:text-[#6B1E1E]"
+            }`}
+          >
+            <EyeOff className="h-3.5 w-3.5" />
+            Hidden
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[9px] ${
+                showHidden
+                  ? "bg-white/15 text-white"
+                  : "bg-[#eadbd7] text-[#704343]"
+              }`}
+            >
+              {hiddenOrderList.length}
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* ================= ORDERS ================= */}
+      {/* ================= SECTION INFO ================= */}
 
-      <div className="space-y-4">
-        {orders.map((order) => (
-          <div
-            key={order.id}
-            className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
-          >
-            {/* ================= ORDER HEADER ================= */}
+      <div className="flex items-center justify-between rounded-2xl border border-[#e7d8d4] bg-[#fffaf8] px-4 py-3.5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#ead9d5] bg-[#f7eeeb]">
+            {showHidden ? (
+              <EyeOff className="h-4 w-4 text-[#806965]" />
+            ) : (
+              <Eye className="h-4 w-4 text-[#6B1E1E]" />
+            )}
+          </div>
 
-            <div className="flex flex-col gap-4 border-b border-white/[0.06] p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h3 className="font-semibold text-white">
-                    Order #{order.id}
-                  </h3>
+          <div>
+            <p className="text-xs font-bold text-[#3b1c1c]">
+              {showHidden ? "Hidden Orders" : "Visible Orders"}
+            </p>
 
-                  <StatusBadge status={order.status} />
-                </div>
+            <p className="mt-0.5 text-[11px] text-[#806b67]">
+              {showHidden
+                ? "Orders hidden from the main list."
+                : "Your current rental orders."}
+            </p>
+          </div>
+        </div>
 
-                <p className="mt-1 text-xs text-white/30">
-                  Ordered on {new Date(order.created_at).toLocaleDateString()}
-                </p>
-              </div>
+        <span className="hidden rounded-full border border-[#e7d8d4] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#705c58] shadow-sm sm:block">
+          {currentOrders.length}{" "}
+          {currentOrders.length === 1 ? "order" : "orders"}
+        </span>
+      </div>
 
-              <div className="text-left sm:text-right">
-                <p className="text-lg font-semibold text-white">
-                  ৳{Number(order.total_amount).toLocaleString()}
-                </p>
+      {/* ================= EMPTY STATE ================= */}
 
-                <p className="text-xs text-white/30">Total amount</p>
-              </div>
-            </div>
+      {currentOrders.length === 0 && (
+        <div className="rounded-[24px] border border-[#e7d8d4] bg-[#fffaf8] px-5 py-16 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[18px] border border-[#ead9d5] bg-[#f7eeeb]">
+            {showHidden ? (
+              <EyeOff className="h-6 w-6 text-[#6B1E1E]" />
+            ) : (
+              <Package className="h-6 w-6 text-[#6B1E1E]" />
+            )}
+          </div>
 
-            {/* ================= ORDER CONTENT ================= */}
+          <h3 className="text-sm font-bold text-[#321717]">
+            {showHidden ? "No hidden orders" : "No visible orders"}
+          </h3>
 
-            <div className="p-5">
-              {/* ================= RENTER ================= */}
+          <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-[#806b67]">
+            {showHidden
+              ? "Orders that you hide will appear here."
+              : "You do not have any visible rental orders at the moment."}
+          </p>
+        </div>
+      )}
 
-              <div className="mb-5 rounded-xl border border-white/[0.06] bg-black/20 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <User className="h-4 w-4 text-white/40" />
+      {/* ================= ORDER GRID ================= */}
 
-                  <p className="text-sm font-medium text-white">
-                    Renter Information
-                  </p>
-                </div>
+      {currentOrders.length > 0 && (
+        <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-2">
+          {currentOrders.map((order) => (
+            <div
+              key={order.id}
+              className="
+                group
+                flex h-full flex-col overflow-hidden
+                rounded-[24px]
+                border border-[#d9c4bf]
+                bg-[#fffaf8]
+                shadow-[0_8px_28px_rgba(72,27,27,0.08)]
+                transition-all duration-300
+                hover:-translate-y-1
+                hover:border-[#b98c84]
+                hover:bg-white
+                hover:shadow-[0_18px_42px_rgba(72,27,27,0.14)]
+              "
+            >
+              {/* ================= CARD HEADER ================= */}
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {/* NAME */}
+              <div
+                className="
+                  border-b border-[#e6d4d0]
+                  bg-gradient-to-br from-[#f8eeeb] to-[#fffaf8]
+                  px-5 py-5
+                  transition-all duration-300
+                  group-hover:from-[#f5e7e3]
+                  group-hover:to-[#fffaf8]
+                "
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-bold text-[#321717]">
+                        Order #{order.id}
+                      </h3>
 
-                  <div>
-                    <p className="text-xs text-white/30">Name</p>
+                      <StatusBadge status={order.status} />
+                    </div>
 
-                    <p className="mt-1 text-sm text-white/70">
-                      {order.renter?.name || "Unknown"}
+                    <p className="mt-1 text-[10px] text-[#806b67]">
+                      Ordered on{" "}
+                      {new Date(order.created_at).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </p>
                   </div>
 
-                  {/* EMAIL */}
+                  {/* TOTAL */}
 
-                  <div>
-                    <p className="text-xs text-white/30">Email</p>
-
-                    <p className="mt-1 break-all text-sm text-white/70">
-                      {order.renter?.email || "-"}
+                  <div
+                    className="
+                      shrink-0
+                      rounded-xl
+                      border border-[#dfc8c3]
+                      bg-white
+                      px-3.5 py-2.5
+                      text-right
+                      shadow-sm
+                      transition-all duration-300
+                      group-hover:border-[#c9a39b]
+                      group-hover:shadow-md
+                    "
+                  >
+                    <p className="text-sm font-bold text-[#6B1E1E]">
+                      ৳{Number(order.total_amount).toLocaleString()}
                     </p>
-                  </div>
 
-                  {/* PHONE */}
-
-                  <div>
-                    <p className="text-xs text-white/30">Phone</p>
-
-                    <p className="mt-1 text-sm text-white/70">
-                      {order.renter?.phone || "-"}
-                    </p>
+                    <p className="text-[9px] text-[#8a7772]">Total</p>
                   </div>
                 </div>
               </div>
 
-              {/* ================= RENTAL INFO ================= */}
+              {/* ================= CARD BODY ================= */}
 
-              <div className="mb-5 grid gap-3 sm:grid-cols-3">
-                <InfoItem
-                  icon={<CalendarDays className="h-4 w-4" />}
-                  label="Start Date"
-                  value={formatDate(order.start_date)}
-                />
+              <div className="flex flex-1 flex-col p-5">
+                {/* ================= RENTER INFORMATION ================= */}
 
-                <InfoItem
-                  icon={<CalendarDays className="h-4 w-4" />}
-                  label="End Date"
-                  value={formatDate(order.end_date)}
-                />
+                <div
+                  className="
+                    rounded-[18px]
+                    border border-[#e4d1cc]
+                    bg-[#f8efec]
+                    p-4
+                    transition-all duration-300
+                    group-hover:border-[#d7bbb5]
+                    group-hover:bg-[#f7ece8]
+                  "
+                >
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#e2cbc5] bg-white shadow-sm">
+                      <User className="h-4 w-4 text-[#6B1E1E]" />
+                    </div>
 
-                <InfoItem
-                  icon={<Clock className="h-4 w-4" />}
-                  label="Duration"
-                  value={`${order.duration_days} ${
-                    order.duration_days === 1 ? "day" : "days"
-                  }`}
-                />
-              </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#3b1c1c]">
+                        Renter Information
+                      </p>
 
-              {/* ================= TOOLS ================= */}
+                      <p className="text-[10px] text-[#806b67]">
+                        Customer contact
+                      </p>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="mb-3 flex items-center gap-2">
-                  <Package className="h-4 w-4 text-white/40" />
+                  {/* EMAIL + PHONE */}
 
-                  <p className="text-sm font-medium text-white">
-                    Ordered Tools
-                  </p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {/* EMAIL */}
+
+                    <div className="min-w-0 rounded-xl border border-[#e6d5d0] bg-white px-3 py-2.5 shadow-sm">
+                      <p className="text-[9px] font-medium uppercase tracking-wide text-[#9a8580]">
+                        Email
+                      </p>
+
+                      <p className="mt-1 truncate text-xs font-semibold text-[#4b3030]">
+                        {order.renter?.email || "-"}
+                      </p>
+                    </div>
+
+                    {/* PHONE */}
+
+                    <div className="rounded-xl border border-[#e6d5d0] bg-white px-3 py-2.5 shadow-sm">
+                      <p className="text-[9px] font-medium uppercase tracking-wide text-[#9a8580]">
+                        Phone
+                      </p>
+
+                      <p className="mt-1 text-xs font-semibold text-[#4b3030]">
+                        {order.renter?.phone || "-"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  {order.tools?.map((tool) => (
-                    <div
-                      key={tool.id}
-                      className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-black/20 p-4 sm:flex-row sm:items-center"
-                    >
-                      {/* ================= TOOL IMAGE ================= */}
+                {/* ================= RENTAL DETAILS ================= */}
 
-                      {tool.tool_image ? (
-                        <img
-                          src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${tool.tool_image}`}
-                          alt={tool.tool_name}
-                          className="h-16 w-16 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-white/[0.05]">
-                          <Package className="h-5 w-5 text-white/20" />
+                <div className="mt-5">
+                  <div className="mb-2.5">
+                    <p className="text-xs font-bold text-[#3b1c1c]">
+                      Rental Details
+                    </p>
+
+                    <p className="mt-0.5 text-[10px] text-[#806b67]">
+                      Rental period
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <InfoItem
+                      icon={<CalendarDays className="h-3.5 w-3.5" />}
+                      label="Start"
+                      value={formatDate(order.start_date)}
+                    />
+
+                    <InfoItem
+                      icon={<CalendarDays className="h-3.5 w-3.5" />}
+                      label="End"
+                      value={formatDate(order.end_date)}
+                    />
+
+                    <InfoItem
+                      icon={<Clock className="h-3.5 w-3.5" />}
+                      label="Duration"
+                      value={`${order.duration_days} ${
+                        order.duration_days === 1 ? "day" : "days"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* ================= TOOLS ================= */}
+
+                <div className="mt-5">
+                  <div className="mb-2.5 flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#e2d0cb] bg-[#f7eeeb]">
+                      <Package className="h-3.5 w-3.5 text-[#765b56]" />
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-bold text-[#3b1c1c]">
+                        Ordered Tools
+                      </p>
+
+                      <p className="text-[10px] text-[#806b67]">
+                        Tools in this order
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {order.tools?.map((tool) => (
+                      <div
+                        key={tool.id}
+                        className="
+                          flex items-center gap-2.5
+                          rounded-[16px]
+                          border border-[#e2d0cb]
+                          bg-[#faf3f0]
+                          p-2.5
+                          transition-all duration-300
+                          hover:border-[#cda9a0]
+                          hover:bg-[#f6e9e5]
+                          hover:shadow-sm
+                        "
+                      >
+                        {/* IMAGE */}
+
+                        {tool.tool_image ? (
+                          <img
+                            src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${tool.tool_image}`}
+                            alt={tool.tool_name}
+                            className="h-12 w-12 shrink-0 rounded-xl border border-[#dfc9c4] object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#dfc9c4] bg-[#f1e2de]">
+                            <Package className="h-4 w-4 text-[#92736d]" />
+                          </div>
+                        )}
+
+                        {/* TOOL INFO */}
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-[#3b1c1c]">
+                            {tool.tool_name}
+                          </p>
+
+                          <p className="mt-0.5 truncate text-[10px] text-[#806b67]">
+                            {tool.brand}
+                          </p>
+
+                          <div className="mt-1 flex items-center gap-1 text-[9px] text-[#907b76]">
+                            <MapPin className="h-2.5 w-2.5 shrink-0" />
+
+                            <span className="truncate">{tool.location}</span>
+                          </div>
                         </div>
-                      )}
 
-                      {/* ================= TOOL INFORMATION ================= */}
+                        {/* PRICE */}
 
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-white">
-                          {tool.tool_name}
-                        </p>
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs font-bold text-[#6B1E1E]">
+                            ৳
+                            {Number(tool.rental_price_per_day).toLocaleString()}
+                          </p>
 
-                        <p className="mt-1 text-xs text-white/40">
-                          {tool.brand}
-                        </p>
-
-                        <div className="mt-2 flex items-center gap-1 text-xs text-white/30">
-                          <MapPin className="h-3 w-3" />
-
-                          {tool.location}
+                          <p className="text-[9px] text-[#927c77]">/day</p>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
 
-                      {/* ================= PRICE ================= */}
+                {/* ================= MESSAGE ================= */}
 
-                      <div className="sm:text-right">
-                        <p className="text-sm font-medium text-white">
-                          ৳{Number(tool.rental_price_per_day).toLocaleString()}
-                        </p>
+                {order.message && (
+                  <div className="mt-5 rounded-[16px] border border-[#e2ccc7] bg-[#f7ece9] px-4 py-3.5">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#8B3A3A]">
+                      Renter Message
+                    </p>
 
-                        <p className="text-xs text-white/30">per day</p>
+                    <p className="mt-1 text-xs leading-5 text-[#6e5955]">
+                      {order.message}
+                    </p>
+                  </div>
+                )}
+
+                {/* ================= BOTTOM ACTION AREA ================= */}
+
+                <div className="mt-auto pt-5">
+                  {/* APPROVE / REJECT */}
+
+                  {order.status === "pending" && (
+                    <div className="border-t border-[#e4d3cf] pt-4">
+                      <div className="flex gap-2">
+                        {/* REJECT */}
+
+                        <button
+                          type="button"
+                          onClick={() => handleReject(order.id)}
+                          disabled={actionLoading === order.id}
+                          className="
+                            inline-flex flex-1
+                            items-center justify-center gap-1.5
+                            rounded-xl
+                            border border-[#e0bcb5]
+                            bg-[#fff6f3]
+                            px-3 py-2.5
+                            text-xs font-semibold
+                            text-[#9a4940]
+                            transition-all duration-300
+                            hover:border-[#b96b61]
+                            hover:bg-[#fce9e5]
+                            hover:text-[#7e3028]
+                            hover:shadow-sm
+                            disabled:cursor-not-allowed
+                            disabled:opacity-40
+                          "
+                        >
+                          {actionLoading === order.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <X className="h-3.5 w-3.5" />
+                          )}
+                          Reject
+                        </button>
+
+                        {/* APPROVE */}
+
+                        <button
+                          type="button"
+                          onClick={() => handleApprove(order.id)}
+                          disabled={actionLoading === order.id}
+                          className="
+                            inline-flex flex-1
+                            items-center justify-center gap-1.5
+                            rounded-xl
+                            bg-[#6B1E1E]
+                            px-3 py-2.5
+                            text-xs font-semibold
+                            text-white
+                            shadow-[0_4px_12px_rgba(107,30,30,0.16)]
+                            transition-all duration-300
+                            hover:bg-[#541515]
+                            hover:shadow-[0_7px_18px_rgba(107,30,30,0.24)]
+                            disabled:cursor-not-allowed
+                            disabled:opacity-40
+                          "
+                        >
+                          {actionLoading === order.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5" />
+                          )}
+                          Approve
+                        </button>
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* APPROVED */}
+
+                  {order.status === "approved" && (
+                    <div className="border-t border-[#e4d3cf] pt-4">
+                      <div className="flex items-center justify-center gap-1.5 rounded-xl border border-[#bdd3c0] bg-[#edf7ef] px-3 py-2.5 text-[11px] font-semibold text-[#356b3e]">
+                        <Check className="h-3.5 w-3.5" />
+                        Order has been approved
+                      </div>
+                    </div>
+                  )}
+
+                  {/* REJECTED */}
+
+                  {order.status === "rejected" && (
+                    <div className="border-t border-[#e4d3cf] pt-4">
+                      <div className="flex items-center justify-center gap-1.5 rounded-xl border border-[#e1bdb7] bg-[#fff0ed] px-3 py-2.5 text-[11px] font-semibold text-[#a83f2e]">
+                        <X className="h-3.5 w-3.5" />
+                        Order has been rejected
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ================= HIDE / SHOW ORDER ================= */}
+
+                  <div
+                    className={`${
+                      order.status === "pending" ||
+                      order.status === "approved" ||
+                      order.status === "rejected"
+                        ? "mt-3"
+                        : ""
+                    }`}
+                  >
+                    {showHidden ? (
+                      <button
+                        type="button"
+                        onClick={() => handleShowOrder(order.id)}
+                        className="
+                          group/show
+                          inline-flex
+                          w-full
+                          items-center
+                          justify-center
+                          gap-2
+                          rounded-xl
+                          border
+                          border-[#d8c1bc]
+                          bg-[#fffaf8]
+                          px-3
+                          py-2.5
+                          text-[11px]
+                          font-semibold
+                          text-[#765f5b]
+                          transition-all
+                          duration-300
+                          hover:border-[#6B1E1E]
+                          hover:bg-[#6B1E1E]
+                          hover:text-white
+                          hover:shadow-[0_7px_18px_rgba(107,30,30,0.18)]
+                        "
+                      >
+                        <Eye
+                          className="
+                            h-3.5
+                            w-3.5
+                            transition-transform
+                            duration-300
+                            group-hover/show:scale-110
+                          "
+                        />
+                        Show Order
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleHideOrder(order.id)}
+                        className="
+                              group/hide
+                              inline-flex
+                              w-full
+                              items-center
+                              justify-center
+                              gap-2
+                              rounded-xl
+                              border
+                              border-[#d8c1bc]
+                              bg-[#fffaf8]
+                              px-3
+                              py-2.5
+                              text-[11px]
+                              font-semibold
+                              text-[#765f5b]
+                              transition-all
+                              duration-300
+                              hover:border-[#3D0B0B]
+                              hover:bg-[#3D0B0B]
+                              hover:text-white
+                              hover:shadow-[0_8px_22px_rgba(61,11,11,0.28)]
+                            "
+                      >
+                        <EyeOff
+                          className="
+                        h-3.5
+                        w-3.5
+                        transition-transform
+                        duration-300
+                        group-hover/hide:scale-110
+                      "
+                        />
+                        Hide Order
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* ================= MESSAGE ================= */}
-
-              {order.message && (
-                <div className="mt-5 rounded-xl border border-white/[0.06] bg-black/20 p-4">
-                  <p className="text-xs text-white/30">Renter Message</p>
-
-                  <p className="mt-2 text-sm leading-6 text-white/60">
-                    {order.message}
-                  </p>
-                </div>
-              )}
-
-              {/* ================= ACTIONS ================= */}
-
-              {order.status === "pending" && (
-                <div className="mt-5 flex flex-col gap-3 border-t border-white/[0.06] pt-5 sm:flex-row sm:justify-end">
-                  {/* ================= REJECT ================= */}
-
-                  <button
-                    type="button"
-                    onClick={() => handleReject(order.id)}
-                    disabled={actionLoading === order.id}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {actionLoading === order.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <X className="h-4 w-4" />
-                    )}
-                    Reject
-                  </button>
-
-                  {/* ================= APPROVE ================= */}
-
-                  <button
-                    type="button"
-                    onClick={() => handleApprove(order.id)}
-                    disabled={actionLoading === order.id}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {actionLoading === order.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                    Approve
-                  </button>
-                </div>
-              )}
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// ======================================================
-// INFO ITEM
-// ======================================================
+// ================= INFO ITEM =================
 
 function InfoItem({
   icon,
@@ -486,21 +837,33 @@ function InfoItem({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-      <div className="flex items-center gap-2 text-white/30">
-        {icon}
+    <div
+      className="
+        rounded-[15px]
+        border border-[#e2d0cb]
+        bg-[#faf3f0]
+        px-2.5 py-2.5
+        transition-all duration-300
+        hover:border-[#cda9a0]
+        hover:bg-[#f6e9e5]
+      "
+    >
+      <div className="flex flex-col items-center gap-1 text-center">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#e1cdc8] bg-white text-[#806560] shadow-sm">
+          {icon}
+        </div>
 
-        <span className="text-xs">{label}</span>
+        <span className="text-[9px] font-medium text-[#907b76]">{label}</span>
       </div>
 
-      <p className="mt-2 text-sm font-medium text-white/70">{value}</p>
+      <p className="mt-1.5 text-center text-[10px] font-bold leading-4 text-[#4a2929]">
+        {value}
+      </p>
     </div>
   );
 }
 
-// ======================================================
-// DATE FORMAT
-// ======================================================
+// ================= DATE FORMAT =================
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString("en-GB", {
@@ -510,20 +873,20 @@ function formatDate(date: string) {
   });
 }
 
-// ======================================================
-// STATUS BADGE
-// ======================================================
+// ================= STATUS BADGE =================
 
 function StatusBadge({ status }: { status: Order["status"] }) {
   const styles: Record<Order["status"], string> = {
-    pending: "bg-yellow-500/10 text-yellow-400",
-    approved: "bg-green-500/10 text-green-400",
-    rejected: "bg-red-500/10 text-red-400",
+    pending: "border border-[#e5cda3] bg-[#fff6df] text-[#996b1f]",
+
+    approved: "border border-[#bdd3c0] bg-[#edf7ef] text-[#356b3e]",
+
+    rejected: "border border-[#e0bdb7] bg-[#fff0ed] text-[#a83f2e]",
   };
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${styles[status]}`}
+      className={`rounded-full px-2.5 py-1 text-[9px] font-bold capitalize ${styles[status]}`}
     >
       {status}
     </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface AdminUser {
@@ -38,37 +38,73 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
       .toUpperCase() || "AD";
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-white/10 bg-[#090a0c]/90 px-5 backdrop-blur-xl lg:px-8">
-      {/* Left */}
-      <div className="flex items-center gap-4">
-        {/* Mobile menu */}
+    <header className="sticky top-0 z-30 flex h-[78px] items-center justify-between border-b border-[#e7dfd4] bg-[#faf8f3]/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+      {/* LEFT SIDE */}
+
+      <div className="flex min-w-0 items-center gap-3">
+        {/* MOBILE MENU */}
+
         <button
           type="button"
           onClick={onMenuClick}
-          className="rounded-xl border border-white/10 bg-white/5 p-2.5 text-white/60 transition hover:bg-white/10 hover:text-white lg:hidden"
+          className="rounded-xl border border-[#e7dfd4] bg-white/70 p-2 text-[#77736d] shadow-sm transition-all duration-200 hover:border-[#d8cabb] hover:bg-white hover:text-[#c1502e] lg:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div>
-          <p className="text-sm text-white/40">Administration</p>
+        {/* HEADER TEXT */}
 
-          <h1 className="text-lg font-semibold">Dashboard</h1>
+        <div className="min-w-0">
+          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#c1502e]">
+            ToolShare
+          </p>
+
+          <h1 className="mt-0.5 truncate text-lg font-bold tracking-tight text-[#292722] sm:text-xl">
+            Owner Workspace
+          </h1>
+
+          <p className="mt-0.5 hidden truncate text-[11px] font-medium leading-tight text-[#77736d] sm:block">
+            Manage your ToolShare account
+          </p>
         </div>
       </div>
 
-      {/* Right */}
-      <div className="flex items-center gap-3">
-        <div className="hidden text-right sm:block">
-          <p className="text-sm font-medium">{admin?.full_name || "Admin"}</p>
+      {/* RIGHT SIDE */}
 
-          <p className="text-xs text-white/40">
-            {admin?.email || "Administrator"}
-          </p>
-        </div>
+      <div className="ml-3 flex items-center gap-3 sm:gap-4">
+        {/* OWNER PROFILE */}
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm font-semibold">
-          {initials}
+        <div className="flex items-center gap-2.5 rounded-2xl border border-[#e7dfd4] bg-white/70 px-2.5 py-1.5 shadow-sm sm:px-3">
+          {/* AVATAR */}
+
+          <div className="relative shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#e8a33d] to-[#c1502e] text-xs font-bold text-white shadow-md">
+              {initials}
+            </div>
+
+            {/* ONLINE DOT */}
+
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#4f7a52] shadow-[0_0_0_2px_#ffffff]" />
+          </div>
+
+          {/* OWNER INFO */}
+
+          <div className="hidden min-w-0 sm:block">
+            <div className="flex items-center gap-1.5">
+              <p className="max-w-[180px] truncate text-[14px] font-bold leading-tight text-[#292722]">
+                {admin?.full_name || "Owner"}
+              </p>
+
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[#8f887f]" />
+            </div>
+
+            <p
+              className="mt-0.5 max-w-[210px] truncate text-[11px] font-medium leading-tight text-[#77736d]"
+              title={admin?.email || "Owner Account"}
+            >
+              {admin?.email || "Owner Account"}
+            </p>
+          </div>
         </div>
       </div>
     </header>

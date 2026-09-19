@@ -19,15 +19,31 @@ interface StatCardProps {
 
 function StatCard({ title, value, icon }: StatCardProps) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-white/40">{title}</p>
+    <div className="group relative overflow-hidden rounded-2xl border border-[#e7dfd4] bg-white/70 p-4 shadow-[0_3px_14px_rgba(33,31,28,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#d8cabb] hover:bg-white hover:shadow-[0_8px_22px_rgba(33,31,28,0.07)]">
+      {/* DECORATIVE CIRCLE */}
 
-          <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
+      <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full border-[8px] border-[#e8a33d]/10 transition-transform duration-300 group-hover:scale-110" />
+
+      {/* CONTENT */}
+
+      <div className="relative flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8b8177]">
+            {title}
+          </p>
+
+          <p className="mt-2 text-[28px] font-bold leading-none tracking-tight text-[#292722]">
+            {value}
+          </p>
+
+          <p className="mt-2 text-[10px] font-medium text-[#a19a91]">
+            Current platform total
+          </p>
         </div>
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60">
+        {/* ICON */}
+
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#e7dfd4] bg-[#f3efe7] text-[#c17a28] shadow-sm transition-all duration-200 group-hover:border-[#e8a33d]/40 group-hover:bg-[#f6d7a9]/40">
           {icon}
         </div>
       </div>
@@ -47,53 +63,107 @@ export default function AdminStats() {
 
   useEffect(() => {
     const loadStats = async () => {
+      setLoading(true);
+
+      // Check Admin Token
+      console.log("ADMIN TOKEN:", localStorage.getItem("admin_access_token"));
+
+      // =========================
+      // RENTERS
+      // =========================
+
       try {
-        const [
-          rentersResponse,
-          ownersResponse,
-          categoriesResponse,
-          adminsResponse,
-        ] = await Promise.all([
-          adminApi.get("/renter"),
-          adminApi.get("/owner/listall"),
-          adminApi.get("/admin/categories"),
-          adminApi.get("/admin/listall"),
-        ]);
+        const response = await adminApi.get("/renter");
 
-        setStats({
-          renters: Array.isArray(rentersResponse.data)
-            ? rentersResponse.data.length
-            : 0,
+        console.log("Renters response:", response.data);
 
-          owners: Array.isArray(ownersResponse.data)
-            ? ownersResponse.data.length
-            : 0,
-
-          categories: Array.isArray(categoriesResponse.data)
-            ? categoriesResponse.data.length
-            : 0,
-
-          admins: Array.isArray(adminsResponse.data)
-            ? adminsResponse.data.length
-            : 0,
-        });
+        setStats((previous) => ({
+          ...previous,
+          renters: Array.isArray(response.data) ? response.data.length : 0,
+        }));
       } catch (error) {
-        console.error("Failed to load admin statistics:", error);
-      } finally {
-        setLoading(false);
+        console.error("Failed to load renters:", error);
       }
+
+      // =========================
+      // OWNERS
+      // =========================
+
+      try {
+        const response = await adminApi.get("/owner/listall");
+
+        console.log("Owners response:", response.data);
+
+        setStats((previous) => ({
+          ...previous,
+          owners: Array.isArray(response.data) ? response.data.length : 0,
+        }));
+      } catch (error) {
+        console.error("Failed to load owners:", error);
+      }
+
+      // =========================
+      // CATEGORIES
+      // =========================
+
+      try {
+        const response = await adminApi.get("/admin/categories");
+
+        console.log("Categories response:", response.data);
+
+        setStats((previous) => ({
+          ...previous,
+          categories: Array.isArray(response.data) ? response.data.length : 0,
+        }));
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+
+      // =========================
+      // ADMINS
+      // =========================
+
+      try {
+        const response = await adminApi.get("/admin/listall");
+
+        console.log("Admins response:", response.data);
+
+        setStats((previous) => ({
+          ...previous,
+          admins: Array.isArray(response.data) ? response.data.length : 0,
+        }));
+      } catch (error) {
+        console.error("Failed to load admins:", error);
+      }
+
+      setLoading(false);
     };
 
     loadStats();
   }, []);
 
+  // =========================
+  // LOADING
+  // =========================
+
   if (loading) {
     return (
-      <div className="flex h-32 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
-        <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[1, 2, 3, 4].map((item) => (
+          <div
+            key={item}
+            className="flex h-[122px] items-center justify-center rounded-2xl border border-[#e7dfd4] bg-white/70 shadow-[0_3px_14px_rgba(33,31,28,0.04)]"
+          >
+            <Loader2 className="h-5 w-5 animate-spin text-[#c17a28]" />
+          </div>
+        ))}
       </div>
     );
   }
+
+  // =========================
+  // STAT CARDS
+  // =========================
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

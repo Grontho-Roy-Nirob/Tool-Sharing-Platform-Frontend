@@ -1,25 +1,25 @@
 import axios from "axios";
 
-const api = axios.create({
+const adminApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
-api.interceptors.request.use(
+adminApi.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
-      const adminToken = localStorage.getItem(
-        "admin_access_token",
-      );
-      const token = adminToken ;
+      const token = localStorage.getItem("admin_access_token");
 
       if (token) {
+        config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
 
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    return Promise.reject(error);
+  },
 );
 
-export default api;
+export default adminApi;

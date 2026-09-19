@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, User, Wrench } from "lucide-react";
+import {
+  ArrowRight,
+  User,
+  Wrench,
+  Hammer,
+  Share2,
+} from "lucide-react";
 
 const registerOptions = [
   {
@@ -18,98 +24,328 @@ const registerOptions = [
 
 export default function RegisterPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#090a0c] px-4 py-12 text-white">
-      <div className="w-full max-w-2xl">
-        {/* Header */}
-        <div className="mb-10 text-center">
-          <Link
-            href="/"
-            className="mb-8 inline-flex items-center gap-3"
-            aria-label="ToolShire home"
-          >
-            <span className="flex size-10 items-center justify-center rounded-full bg-white text-lg font-semibold text-[#101114]">
-              T
-            </span>
-
-            <span className="text-xl font-semibold tracking-[-0.04em]">
-              ToolShire
-            </span>
-          </Link>
-
-          <h1 className="text-3xl font-medium tracking-[-0.04em] sm:text-4xl">
-            Create an account
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 text-[#777980] sm:text-base">
-            Choose how you want to get started.
-          </p>
-        </div>
-
-        {/* Register Card */}
-        <div className="rounded-[28px] border border-[#292b30] bg-[#0d0e10] p-4 shadow-[0_10px_50px_rgba(0,0,0,0.25)] sm:p-6">
-          <div className="mb-5 px-2">
-            <p className="text-sm font-medium text-white">Join as</p>
-
-            <p className="mt-1 text-sm text-[#686a72]">
-              Select your account type to register.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {registerOptions.map((option) => {
-              const Icon = option.icon;
-
-              return (
-                <Link
-                  key={option.title}
-                  href={option.href}
-                  className="group flex items-center gap-4 rounded-2xl border border-[#292b30] bg-[#101114] p-4 transition-all duration-200 hover:border-[#45474d] hover:bg-[#151619]"
-                >
-                  {/* Icon */}
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-[#292b30] bg-[#151619] text-[#a5a5ab] transition-colors duration-200 group-hover:text-white">
-                    <Icon className="size-5" strokeWidth={1.7} />
-                  </div>
-
-                  {/* Text */}
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-sm font-medium text-white sm:text-base">
-                      {option.title}
-                    </h2>
-
-                    <p className="mt-1 text-xs leading-5 text-[#686a72] sm:text-sm">
-                      {option.description}
-                    </p>
-                  </div>
-
-                  {/* Arrow */}
-                  <ArrowRight className="size-4 shrink-0 text-[#55575e] transition-all duration-200 group-hover:translate-x-1 group-hover:text-white" />
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Login Link */}
-          <div className="mt-6 border-t border-[#292b30] pt-6 text-center">
-            <p className="text-sm text-[#686a72]">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-medium text-white transition-colors hover:text-[#c9c9cc]"
+    <main className="min-h-screen bg-[#F3EFE7] px-5 py-10 text-[#211F1C] sm:px-8 sm:py-14">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-3xl items-center justify-center">
+        <div className="w-full">
+          {/* Header */}
+          <div className="mb-10 text-center">
+            {/* Logo */}
+            <Link
+              href="/"
+              className="group mb-8 inline-flex items-center gap-3"
+              aria-label="ToolShare home"
+            >
+              <span
+                className="
+                  relative
+                  flex size-12
+                  items-center justify-center
+                  overflow-hidden
+                  border-2 border-[#211F1C]
+                  bg-[#E8A33D]
+                  text-[#211F1C]
+                  shadow-[3px_3px_0_#211F1C]
+                  transition-all
+                  duration-200
+                  group-hover:-translate-y-0.5
+                  group-hover:shadow-[4px_4px_0_#211F1C]
+                "
               >
-                Log in
-              </Link>
+                <Hammer
+                  className="
+                    relative z-10
+                    size-6
+                    -rotate-12
+                    stroke-[2.5]
+                    transition-transform
+                    duration-300
+                    group-hover:rotate-0
+                  "
+                />
+
+                <span
+                  className="
+                    absolute
+                    bottom-1
+                    right-1
+                    flex size-4
+                    items-center justify-center
+                    rounded-full
+                    bg-[#211F1C]
+                    text-[#F3EFE7]
+                    transition-transform
+                    duration-300
+                    group-hover:scale-110
+                  "
+                >
+                  <Share2 className="size-2.5 stroke-[2.5]" />
+                </span>
+              </span>
+
+              <span
+                className="
+                  font-[family-name:var(--font-display)]
+                  text-2xl
+                  font-bold
+                  tracking-tight
+                  text-[#211F1C]
+                "
+              >
+                ToolShare
+              </span>
+            </Link>
+
+            {/* Heading */}
+            <h1
+              className="
+                font-[family-name:var(--font-display)]
+                text-4xl
+                font-bold
+                leading-tight
+                tracking-tight
+                text-[#211F1C]
+                sm:text-5xl
+              "
+            >
+              Create your account.
+            </h1>
+
+            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-[#6B6862] sm:text-base">
+              Choose how you want to use ToolShare and get started in just a
+              few steps.
             </p>
           </div>
-        </div>
 
-        {/* Back Link */}
-        <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-sm text-[#55575e] transition-colors hover:text-white"
+          {/* Register Card */}
+          <div
+            className="
+              overflow-hidden
+              rounded-[30px]
+              border
+              border-[#211F1C]/10
+              bg-white
+              p-5
+              shadow-[0_20px_60px_rgba(33,31,28,0.10)]
+              sm:p-7
+            "
           >
-            ← Back to ToolShire
-          </Link>
+            {/* Card Header */}
+            <div className="mb-6 flex items-end justify-between gap-4 px-1">
+              <div>
+                <p
+                  className="
+                    font-[family-name:var(--font-display)]
+                    text-lg
+                    font-bold
+                    text-[#211F1C]
+                  "
+                >
+                  Choose your role
+                </p>
+
+                <p className="mt-1 text-sm text-[#7A756D]">
+                  Select an account type to continue.
+                </p>
+              </div>
+
+              <span
+                className="
+                  hidden
+                  rounded-full
+                  bg-[#E8A33D]/20
+                  px-3
+                  py-1.5
+                  text-xs
+                  font-bold
+                  uppercase
+                  tracking-wider
+                  text-[#211F1C]
+                  sm:block
+                "
+              >
+                01 / 02
+              </span>
+            </div>
+
+            {/* Register Options */}
+            <div className="space-y-4">
+              {registerOptions.map((option) => {
+                const Icon = option.icon;
+
+                return (
+                  <Link
+                    key={option.title}
+                    href={option.href}
+                    className="
+                      group
+                      relative
+                      flex
+                      items-center
+                      gap-4
+                      overflow-hidden
+                      rounded-[22px]
+                      border
+                      border-[#211F1C]/10
+                      bg-[#F8F6F1]
+                      p-5
+                      transition-all
+                      duration-300
+                      hover:-translate-y-1
+                      hover:border-[#211F1C]/20
+                      hover:bg-white
+                      hover:shadow-[0_14px_35px_rgba(33,31,28,0.09)]
+                      sm:p-6
+                    "
+                  >
+                    {/* Decorative Circle */}
+                    <div
+                      className="
+                        pointer-events-none
+                        absolute
+                        -right-8
+                        -top-8
+                        size-28
+                        rounded-full
+                        bg-[#E8A33D]/10
+                        transition-transform
+                        duration-500
+                        group-hover:scale-150
+                      "
+                    />
+
+                    {/* Icon */}
+                    <div
+                      className="
+                        relative
+                        flex
+                        size-14
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-2xl
+                        border
+                        border-[#211F1C]/10
+                        bg-[#E8A33D]/20
+                        text-[#211F1C]
+                        transition-all
+                        duration-300
+                        group-hover:rotate-3
+                        group-hover:bg-[#E8A33D]
+                      "
+                    >
+                      <Icon className="size-6" strokeWidth={1.8} />
+                    </div>
+
+                    {/* Text */}
+                    <div className="relative min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h2
+                          className="
+                            font-[family-name:var(--font-display)]
+                            text-lg
+                            font-bold
+                            text-[#211F1C]
+                          "
+                        >
+                          {option.title}
+                        </h2>
+
+                        {option.title === "Tool Owner" && (
+                          <span
+                            className="
+                              rounded-full
+                              bg-[#C1502E]/10
+                              px-2
+                              py-1
+                              text-[10px]
+                              font-bold
+                              uppercase
+                              tracking-wider
+                              text-[#C1502E]
+                            "
+                          >
+                            Earn
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-1 max-w-md text-sm leading-6 text-[#777169]">
+                        {option.description}
+                      </p>
+                    </div>
+
+                    {/* Arrow */}
+                    <div
+                      className="
+                        relative
+                        flex
+                        size-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+                        border
+                        border-[#211F1C]/10
+                        bg-white
+                        text-[#211F1C]/50
+                        transition-all
+                        duration-300
+                        group-hover:border-[#C1502E]
+                        group-hover:bg-[#C1502E]
+                        group-hover:text-white
+                      "
+                    >
+                      <ArrowRight
+                        className="
+                          size-4
+                          transition-transform
+                          duration-300
+                          group-hover:translate-x-0.5
+                        "
+                      />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Login Link */}
+            <div className="mt-7 border-t border-[#211F1C]/10 pt-6 text-center">
+              <p className="text-sm text-[#777169]">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="
+                    font-bold
+                    text-[#C1502E]
+                    transition-colors
+                    hover:text-[#211F1C]
+                  "
+                >
+                  Log in
+                </Link>
+              </p>
+            </div>
+          </div>
+
+          {/* Back Link */}
+          <div className="mt-6 text-center">
+            <Link
+              href="/"
+              className="
+                inline-flex
+                items-center
+                gap-2
+                text-sm
+                font-medium
+                text-[#777169]
+                transition-colors
+                hover:text-[#211F1C]
+              "
+            >
+              ← Back to ToolShare
+            </Link>
+          </div>
         </div>
       </div>
     </main>

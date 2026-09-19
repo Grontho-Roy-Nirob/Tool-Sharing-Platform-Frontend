@@ -56,20 +56,44 @@ export default function DashboardStats({
         return (
           <div
             key={stat.key}
-            className="rounded-2xl border border-[#292b30] bg-[#0d0e10] p-5 transition hover:border-[#3a3c42]"
+            className="group relative overflow-hidden rounded-2xl border border-[#292b30] bg-[#0d0e10] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#3d4047] hover:bg-[#111214]"
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-[#71717a]">{stat.label}</p>
+            {/* Subtle background glow */}
 
-                <p className="mt-2 text-3xl font-bold tracking-tight text-white">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/[0.025] blur-3xl transition group-hover:bg-white/[0.05]" />
+
+            {/* Main content */}
+
+            <div className="relative flex items-start justify-between">
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#71717a]">
+                  {stat.label}
+                </p>
+
+                <p className="mt-3 text-3xl font-bold tracking-tight text-white">
                   {values[stat.key]}
                 </p>
               </div>
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#17181b] text-[#d4d4d8]">
+              {/* Icon */}
+
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#292b30] bg-[#17181b] text-[#a1a1aa] transition-all duration-200 group-hover:border-[#52525b] group-hover:bg-[#e4e4e7] group-hover:text-[#18181b]">
                 <Icon className="h-5 w-5" />
               </div>
+            </div>
+
+            {/* Bottom divider */}
+
+            <div className="relative mt-5 h-px w-full bg-[#202125] transition-colors group-hover:bg-[#34363c]" />
+
+            {/* Bottom information */}
+
+            <div className="relative mt-3 flex items-center justify-between">
+              <span className="text-xs text-[#52525b]">ToolShare</span>
+
+              <span className="text-xs font-medium text-[#3f4147] transition-colors group-hover:text-[#71717a]">
+                Overview
+              </span>
             </div>
           </div>
         );
