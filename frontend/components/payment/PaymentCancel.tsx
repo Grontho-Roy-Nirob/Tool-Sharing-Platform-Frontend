@@ -178,6 +178,8 @@ export default function PaymentCancel() {
             {/* BUTTONS */}
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              {/* CANCELLED BUTTON */}
+
               <button
                 type="button"
                 disabled
@@ -187,6 +189,8 @@ export default function PaymentCancel() {
                 CANCELLED
               </button>
 
+              {/* PAY AGAIN */}
+
               <Link
                 href="/renter/orders"
                 className="group flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#E8A33D] px-5 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#d8942f]"
@@ -195,6 +199,8 @@ export default function PaymentCancel() {
                 Try Payment Again
                 <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
               </Link>
+
+              {/* DASHBOARD */}
 
               <Link
                 href="/renter"
