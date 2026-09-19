@@ -49,7 +49,7 @@ export default function PaymentSuccess() {
     checkPaymentStatus();
   }, []);
 
-  // ================= LOADING =================
+  // LOADING 
 
   if (loading) {
     return (
@@ -65,7 +65,7 @@ export default function PaymentSuccess() {
     );
   }
 
-  // ================= CANCELLED =================
+  // CANCELLED 
 
   if (paymentStatus === "cancelled") {
     return (
@@ -96,7 +96,7 @@ export default function PaymentSuccess() {
     );
   }
 
-  // ================= PAID =================
+  //PAID 
 
   return (
     <div className="min-h-screen bg-[#f5f3ef] px-4 py-10 sm:px-6 lg:px-8">

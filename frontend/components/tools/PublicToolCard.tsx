@@ -20,7 +20,7 @@ export default function PublicToolCard({ tool }: PublicToolCardProps) {
 
       {/* Main Card */}
       <div className="relative overflow-hidden rounded-[26px] border border-[#D8C2F0]/80 bg-white shadow-[0_12px_35px_rgba(92,45,130,0.10)] transition-all duration-500 group-hover:-translate-y-2 group-hover:border-[#A855F7]/60 group-hover:shadow-[0_24px_55px_rgba(124,58,237,0.18)]">
-        {/* ================= IMAGE ================= */}
+        {/* IMAGE  */}
         <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-[#F3E8FF] via-white to-[#FFF7D6]">
           <img
             src={imageUrl}
@@ -74,7 +74,7 @@ export default function PublicToolCard({ tool }: PublicToolCardProps) {
           </div>
         </div>
 
-        {/* ================= CONTENT ================= */}
+        {/* CONTENT  */}
         <div className="p-4.5 sm:p-5">
           {/* Category + Price */}
           <div className="flex items-center justify-between gap-3">

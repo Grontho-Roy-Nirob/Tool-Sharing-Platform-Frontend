@@ -21,7 +21,6 @@ import OwnerOrders from "@/components/dashboard/owner/OwnerOrders";
 import api from "@/lib/axios";
 
 // OWNER
-
 interface Owner {
   id: number;
   name: string;
@@ -31,7 +30,6 @@ interface Owner {
 }
 
 // JWT
-
 interface OwnerToken {
   email?: string;
   iat?: number;
@@ -39,20 +37,17 @@ interface OwnerToken {
 }
 
 //PAGE
-
 export default function OwnerOrdersPage() {
   const [owner, setOwner] = useState<Owner | null>(null);
   const [loading, setLoading] = useState(true);
 
   // GET OWNER
-
   useEffect(() => {
     const fetchOwner = async () => {
       try {
         setLoading(true);
 
         // TOKEN
-
         const token = localStorage.getItem("access_token");
 
         if (!token) {
@@ -61,7 +56,6 @@ export default function OwnerOrdersPage() {
         }
 
         // DECODE TOKEN
-
         const decoded = jwtDecode<OwnerToken>(token);
 
         const email = decoded.email;
@@ -72,11 +66,9 @@ export default function OwnerOrdersPage() {
         }
 
         // GET OWNERS
-
         const response = await api.get<Owner[]>("/owner/listall");
 
         //FIND CURRENT OWNER
-
         const ownerData = response.data.find(
           (item) =>
             item.email?.trim().toLowerCase() === email.trim().toLowerCase(),
@@ -88,7 +80,6 @@ export default function OwnerOrdersPage() {
         }
 
         // SET OWNER
-
         setOwner({
           id: ownerData.id,
           name: ownerData.name,
@@ -228,7 +219,6 @@ export default function OwnerOrdersPage() {
                   </div>
 
                   {/* WORKSPACE STATUS */}
-
                   <div className="rounded-[22px] bg-white p-5 shadow-[0_8px_30px_rgba(55,45,30,0.055)]">
                     <div className="flex items-center gap-3.5">
                       <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#eaf4eb]">

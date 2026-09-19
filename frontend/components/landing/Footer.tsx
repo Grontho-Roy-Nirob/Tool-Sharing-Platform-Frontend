@@ -152,9 +152,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* =====================================================
-              PLATFORM
-          ====================================================== */}
+          {/* PLATFORM */}
 
           <div>
             <h3 className="text-sm font-semibold text-[#211F1C]">
@@ -200,9 +198,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* =====================================================
-              SUPPORT
-          ====================================================== */}
+          {/* SUPPORT */}
 
           <div>
             <h3 className="text-sm font-semibold text-[#211F1C]">
