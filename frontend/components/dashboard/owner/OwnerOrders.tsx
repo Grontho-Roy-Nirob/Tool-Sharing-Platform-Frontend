@@ -17,7 +17,8 @@ import { toast } from "sonner";
 
 import api from "@/lib/axios";
 
-// TOOL
+// ================= TOOL =================
+
 interface Tool {
   id: number;
   tool_name: string;
@@ -27,7 +28,8 @@ interface Tool {
   tool_image?: string;
 }
 
-// RENTER
+// ================= RENTER =================
+
 interface Renter {
   renterId: number;
   name: string;
@@ -35,7 +37,8 @@ interface Renter {
   phone?: string;
 }
 
-// ORDER
+// ================= ORDER =================
+
 interface Order {
   id: number;
   renter_id: number;
@@ -45,20 +48,27 @@ interface Order {
   end_date: string;
   duration_days: number;
   total_amount: string | number;
+
   status: "pending" | "approved" | "rejected";
+
+  payment_status: "unpaid" | "paid" | "cancelled";
+
   message?: string | null;
   created_at: string;
 }
 
-// OWNER ORDERS
+// ================= OWNER ORDERS =================
+
 export default function OwnerOrders({ ownerId }: { ownerId: number }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+
   const [hiddenOrders, setHiddenOrders] = useState<number[]>([]);
   const [showHidden, setShowHidden] = useState(false);
 
-  // LOAD HIDDEN ORDERS
+  // ================= LOAD HIDDEN ORDERS =================
+
   useEffect(() => {
     const savedHiddenOrders = localStorage.getItem("owner_hidden_orders");
 
@@ -76,7 +86,8 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     }
   }, []);
 
-  // FETCH ORDERS
+  // ================= FETCH ORDERS =================
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -99,14 +110,16 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     }
   };
 
-  // FETCH WHEN OWNER ID AVAILABLE
+  // ================= FETCH WHEN OWNER ID AVAILABLE =================
+
   useEffect(() => {
     if (ownerId) {
       fetchOrders();
     }
   }, [ownerId]);
 
-  // HIDE ORDER
+  // ================= HIDE ORDER =================
+
   const handleHideOrder = (orderId: number) => {
     const updatedHiddenOrders = hiddenOrders.includes(orderId)
       ? hiddenOrders
@@ -122,7 +135,8 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     toast.success("Order hidden successfully");
   };
 
-  // SHOW ORDER
+  // ================= SHOW ORDER =================
+
   const handleShowOrder = (orderId: number) => {
     const updatedHiddenOrders = hiddenOrders.filter((id) => id !== orderId);
 
@@ -136,7 +150,8 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     toast.success("Order restored successfully");
   };
 
-  // APPROVE
+  // ================= APPROVE =================
+
   const handleApprove = async (orderId: number) => {
     try {
       setActionLoading(orderId);
@@ -170,7 +185,8 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     }
   };
 
-  // REJECT
+  // ================= REJECT =================
+
   const handleReject = async (orderId: number) => {
     try {
       setActionLoading(orderId);
@@ -206,20 +222,24 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     }
   };
 
-  // VISIBLE ORDERS
+  // ================= VISIBLE ORDERS =================
+
   const visibleOrders = orders.filter(
     (order) => !hiddenOrders.includes(order.id),
   );
 
-  // HIDDEN ORDERS
+  // ================= HIDDEN ORDERS =================
+
   const hiddenOrderList = orders.filter((order) =>
     hiddenOrders.includes(order.id),
   );
 
-  // CURRENT ORDERS
+  // ================= CURRENT ORDERS =================
+
   const currentOrders = showHidden ? hiddenOrderList : visibleOrders;
 
-  // LOADING
+  // ================= LOADING =================
+
   if (loading) {
     return (
       <div className="flex min-h-[260px] items-center justify-center">
@@ -234,7 +254,8 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
     );
   }
 
-  // MAIN
+  // ================= MAIN =================
+
   return (
     <div className="space-y-6">
       {/* ================= HEADER ================= */}
@@ -257,6 +278,8 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
         {/* ================= TABS ================= */}
 
         <div className="flex w-full rounded-xl border border-[#e4d2ce] bg-[#f7efed] p-1 shadow-sm sm:w-fit">
+          {/* VISIBLE */}
+
           <button
             type="button"
             onClick={() => setShowHidden(false)}
@@ -278,6 +301,8 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
               {visibleOrders.length}
             </span>
           </button>
+
+          {/* HIDDEN */}
 
           <button
             type="button"
@@ -398,7 +423,13 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
                         Order #{order.id}
                       </h3>
 
+                      {/* ORDER STATUS */}
+
                       <StatusBadge status={order.status} />
+
+                      {/* PAYMENT STATUS */}
+
+                      <PaymentStatusBadge status={order.payment_status} />
                     </div>
 
                     <p className="mt-1 text-[10px] text-[#806b67]">
@@ -632,7 +663,7 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
                 {/* ================= BOTTOM ACTION AREA ================= */}
 
                 <div className="mt-auto pt-5">
-                  {/* APPROVE / REJECT */}
+                  {/* ================= APPROVE / REJECT ================= */}
 
                   {order.status === "pending" && (
                     <div className="border-t border-[#e4d3cf] pt-4">
@@ -702,7 +733,7 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
                     </div>
                   )}
 
-                  {/* APPROVED */}
+                  {/* ================= APPROVED ================= */}
 
                   {order.status === "approved" && (
                     <div className="border-t border-[#e4d3cf] pt-4">
@@ -713,7 +744,7 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
                     </div>
                   )}
 
-                  {/* REJECTED */}
+                  {/* ================= REJECTED ================= */}
 
                   {order.status === "rejected" && (
                     <div className="border-t border-[#e4d3cf] pt-4">
@@ -724,17 +755,32 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
                     </div>
                   )}
 
+                  {/* ================= PAYMENT INFO ================= */}
+
+                  {order.payment_status === "paid" && (
+                    <div className="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-[#bdd3c0] bg-[#edf7ef] px-3 py-2.5 text-[11px] font-semibold text-[#356b3e]">
+                      <Check className="h-3.5 w-3.5" />
+                      Payment completed successfully
+                    </div>
+                  )}
+
+                  {order.payment_status === "cancelled" && (
+                    <div className="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-[#e1bdb7] bg-[#fff0ed] px-3 py-2.5 text-[11px] font-semibold text-[#a83f2e]">
+                      <X className="h-3.5 w-3.5" />
+                      Payment cancelled
+                    </div>
+                  )}
+
+                  {order.payment_status === "unpaid" && (
+                    <div className="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-[#e5cda3] bg-[#fff6df] px-3 py-2.5 text-[11px] font-semibold text-[#996b1f]">
+                      <Clock className="h-3.5 w-3.5" />
+                      Payment pending
+                    </div>
+                  )}
+
                   {/* ================= HIDE / SHOW ORDER ================= */}
 
-                  <div
-                    className={`${
-                      order.status === "pending" ||
-                      order.status === "approved" ||
-                      order.status === "rejected"
-                        ? "mt-3"
-                        : ""
-                    }`}
-                  >
+                  <div className="mt-3">
                     {showHidden ? (
                       <button
                         type="button"
@@ -779,37 +825,37 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
                         type="button"
                         onClick={() => handleHideOrder(order.id)}
                         className="
-                              group/hide
-                              inline-flex
-                              w-full
-                              items-center
-                              justify-center
-                              gap-2
-                              rounded-xl
-                              border
-                              border-[#d8c1bc]
-                              bg-[#fffaf8]
-                              px-3
-                              py-2.5
-                              text-[11px]
-                              font-semibold
-                              text-[#765f5b]
-                              transition-all
-                              duration-300
-                              hover:border-[#3D0B0B]
-                              hover:bg-[#3D0B0B]
-                              hover:text-white
-                              hover:shadow-[0_8px_22px_rgba(61,11,11,0.28)]
-                            "
+                          group/hide
+                          inline-flex
+                          w-full
+                          items-center
+                          justify-center
+                          gap-2
+                          rounded-xl
+                          border
+                          border-[#d8c1bc]
+                          bg-[#fffaf8]
+                          px-3
+                          py-2.5
+                          text-[11px]
+                          font-semibold
+                          text-[#765f5b]
+                          transition-all
+                          duration-300
+                          hover:border-[#3D0B0B]
+                          hover:bg-[#3D0B0B]
+                          hover:text-white
+                          hover:shadow-[0_8px_22px_rgba(61,11,11,0.28)]
+                        "
                       >
                         <EyeOff
                           className="
-                        h-3.5
-                        w-3.5
-                        transition-transform
-                        duration-300
-                        group-hover/hide:scale-110
-                      "
+                            h-3.5
+                            w-3.5
+                            transition-transform
+                            duration-300
+                            group-hover/hide:scale-110
+                          "
                         />
                         Hide Order
                       </button>
@@ -825,7 +871,9 @@ export default function OwnerOrders({ ownerId }: { ownerId: number }) {
   );
 }
 
-// ================= INFO ITEM =================
+// ======================================================
+// INFO ITEM
+// ======================================================
 
 function InfoItem({
   icon,
@@ -863,7 +911,9 @@ function InfoItem({
   );
 }
 
-// ================= DATE FORMAT =================
+// ======================================================
+// DATE FORMAT
+// ======================================================
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString("en-GB", {
@@ -873,7 +923,9 @@ function formatDate(date: string) {
   });
 }
 
-// ================= STATUS BADGE =================
+// ======================================================
+// ORDER STATUS BADGE
+// ======================================================
 
 function StatusBadge({ status }: { status: Order["status"] }) {
   const styles: Record<Order["status"], string> = {
@@ -889,6 +941,34 @@ function StatusBadge({ status }: { status: Order["status"] }) {
       className={`rounded-full px-2.5 py-1 text-[9px] font-bold capitalize ${styles[status]}`}
     >
       {status}
+    </span>
+  );
+}
+
+// ======================================================
+// PAYMENT STATUS BADGE
+// ======================================================
+
+function PaymentStatusBadge({ status }: { status: Order["payment_status"] }) {
+  const styles: Record<Order["payment_status"], string> = {
+    unpaid: "border border-[#e5cda3] bg-[#fff6df] text-[#996b1f]",
+
+    paid: "border border-[#bdd3c0] bg-[#edf7ef] text-[#356b3e]",
+
+    cancelled: "border border-[#e0bdb7] bg-[#fff0ed] text-[#a83f2e]",
+  };
+
+  const labels: Record<Order["payment_status"], string> = {
+    unpaid: "UNPAID",
+    paid: "PAID",
+    cancelled: "CANCELLED",
+  };
+
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-[9px] font-bold ${styles[status]}`}
+    >
+      {labels[status]}
     </span>
   );
 }
