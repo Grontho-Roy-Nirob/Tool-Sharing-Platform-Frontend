@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 import api from "@/lib/axios";
 
-// ================= TOOL =================
+// TOOL
 
 interface Tool {
   id: number;
@@ -33,20 +33,20 @@ interface Tool {
   category_id: number;
 }
 
-// ================= CATEGORY =================
+// CATEGORY
 
 interface Category {
   id: number;
   name: string;
 }
 
-// ================= PROPS =================
+// PROPS
 
 interface OwnerToolsProps {
   ownerId: number;
 }
 
-// ================= FORM =================
+// FORM
 
 interface ToolForm {
   tool_name: string;
@@ -58,7 +58,7 @@ interface ToolForm {
   category_id: string;
 }
 
-// ================= COMPONENT =================
+// COMPONENT
 
 export default function OwnerTools({ ownerId }: OwnerToolsProps) {
   const [tools, setTools] = useState<Tool[]>([]);
@@ -83,7 +83,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
 
   const [image, setImage] = useState<File | null>(null);
 
-  // ================= IMAGE URL =================
+  // IMAGE URL
 
   const getImageUrl = (toolImage?: string) => {
     if (!toolImage) return null;
@@ -95,7 +95,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     return `${process.env.NEXT_PUBLIC_API_URL}/uploads/${toolImage}`;
   };
 
-  // ================= FETCH TOOLS =================
+  // FETCH TOOLS
 
   const fetchTools = async () => {
     try {
@@ -112,7 +112,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     }
   };
 
-  // ================= FETCH CATEGORIES =================
+  // FETCH CATEGORIES
 
   const fetchCategories = async () => {
     try {
@@ -125,7 +125,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     }
   };
 
-  // ================= INITIAL LOAD =================
+  // INITIAL LOAD
 
   useEffect(() => {
     if (!ownerId) return;
@@ -134,7 +134,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     fetchCategories();
   }, [ownerId]);
 
-  // ================= RESET FORM =================
+  // RESET FORM
 
   const resetForm = () => {
     setForm({
@@ -151,14 +151,14 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     setEditingTool(null);
   };
 
-  // ================= OPEN CREATE FORM =================
+  // OPEN CREATE FORM
 
   const openCreateForm = () => {
     resetForm();
     setShowForm(true);
   };
 
-  // ================= OPEN EDIT FORM =================
+  // OPEN EDIT FORM
 
   const openEditForm = (tool: Tool) => {
     setEditingTool(tool);
@@ -177,8 +177,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     setShowForm(true);
   };
 
-  // ================= CLOSE FORM =================
-
+  // CLOSE FORM
   const closeForm = () => {
     if (saving) return;
 
@@ -186,7 +185,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     resetForm();
   };
 
-  // ================= INPUT CHANGE =================
+  // INPUT CHANGE
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -201,7 +200,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     }));
   };
 
-  // ================= IMAGE CHANGE =================
+  // IMAGE CHANGE
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -228,13 +227,12 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     setImage(selectedFile);
   };
 
-  // ================= SUBMIT =================
+  // SUBMIT
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // ================= VALIDATION =================
-
+    // VALIDATION
     if (!form.tool_name.trim()) {
       toast.error("Tool name is required");
       return;
@@ -307,7 +305,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
         formData.append("myfile", image);
       }
 
-      // ================= UPDATE =================
+      // UPDATE
 
       if (editingTool) {
         const response = await api.put<Tool>(
@@ -324,7 +322,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
         toast.success("Tool updated successfully");
       }
 
-      // ================= CREATE =================
+      // CREATE
       else {
         const response = await api.post<Tool>(
           `/owner/createtool/${ownerId}`,
@@ -353,21 +351,21 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     }
   };
 
-  // ================= DELETE =================
-
   const handleDelete = async (tool: Tool) => {
-    const confirmed = window.confirm(`Delete "${tool.tool_name}"?`);
-
-    if (!confirmed) return;
-
     try {
       setDeletingId(tool.id);
 
-      await api.delete(`/owner/deletetool/${tool.id}`);
+      await api.delete(`/owner/delete/${tool.id}`);
 
       setTools((current) => current.filter((item) => item.id !== tool.id));
 
-      toast.success("Tool deleted successfully");
+      toast.success("Tool deleted successfully", {
+        style: {
+          background: "#dc2626",
+          color: "#ffffff",
+          border: "none",
+        },
+      });
     } catch (error: any) {
       console.error("Delete tool error:", error);
 
@@ -383,7 +381,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     }
   };
 
-  // ================= LOADING =================
+  // LOADING
 
   if (loading) {
     return (
@@ -393,11 +391,11 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
     );
   }
 
-  // ================= RENDER =================
+  // RENDER
 
   return (
     <div className="space-y-5">
-      {/* ================= PAGE HEADER ================= */}
+      {/* PAGE HEADER  */}
 
       <section className="relative overflow-hidden rounded-[22px] bg-[#292722] px-5 py-6 shadow-[0_12px_32px_rgba(41,39,34,0.12)] sm:px-7">
         <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[#c1502e]/15" />
@@ -437,7 +435,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
         </div>
       </section>
 
-      {/* ================= SUMMARY ================= */}
+      {/* SUMMARY */}
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[#eee8e1] bg-white px-4 py-3 shadow-[0_6px_22px_rgba(55,45,30,0.04)]">
         <div>
@@ -465,7 +463,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
         </div>
       </div>
 
-      {/* ================= FORM ================= */}
+      {/* FORM */}
 
       {showForm && (
         <section className="overflow-hidden rounded-[22px] border border-[#eee8e1] bg-white shadow-[0_8px_28px_rgba(55,45,30,0.055)]">
@@ -669,7 +667,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
         </section>
       )}
 
-      {/* ================= EMPTY STATE ================= */}
+      {/* EMPTY STATE */}
 
       {tools.length === 0 ? (
         <section className="rounded-[22px] border border-dashed border-[#dfd5ca] bg-white px-6 py-16 text-center shadow-[0_6px_22px_rgba(55,45,30,0.04)]">
@@ -696,7 +694,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
           </button>
         </section>
       ) : (
-        /* ================= TOOLS GRID ================= */
+        /* TOOLS GRID  */
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {tools.map((tool) => (
@@ -712,7 +710,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
         </div>
       )}
 
-      {/* ================= LOCAL STYLES ================= */}
+      {/*  LOCAL STYLES  */}
 
       <style jsx>{`
         .form-input {
@@ -742,10 +740,7 @@ export default function OwnerTools({ ownerId }: OwnerToolsProps) {
   );
 }
 
-// ======================================================
 // FORM FIELD
-// ======================================================
-
 function FormField({
   label,
   children,
@@ -764,10 +759,7 @@ function FormField({
   );
 }
 
-// ======================================================
 // TOOL CARD
-// ======================================================
-
 function ToolCard({
   tool,
   deleting,
@@ -785,7 +777,7 @@ function ToolCard({
 
   return (
     <article className="group overflow-hidden rounded-[22px] border border-[#eee8e1] bg-white shadow-[0_8px_28px_rgba(55,45,30,0.055)] transition-all duration-300 hover:-translate-y-1 hover:border-[#e8cda5] hover:shadow-[0_14px_32px_rgba(55,45,30,0.09)]">
-      {/* ================= IMAGE ================= */}
+      {/* IMAGE */}
 
       <div className="relative aspect-[16/10] overflow-hidden bg-[#f5f1eb]">
         {imageUrl ? (
@@ -812,7 +804,7 @@ function ToolCard({
         </div>
       </div>
 
-      {/* ================= CONTENT ================= */}
+      {/* CONTENT */}
 
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
@@ -835,7 +827,7 @@ function ToolCard({
           </div>
         </div>
 
-        {/* ================= META ================= */}
+        {/* META */}
 
         <div className="mt-3 flex flex-wrap gap-2">
           <span className="rounded-full bg-[#f7f4ef] px-2.5 py-1 text-[10px] font-semibold text-[#8c837a]">
@@ -847,13 +839,13 @@ function ToolCard({
           </span>
         </div>
 
-        {/* ================= DESCRIPTION ================= */}
+        {/* DESCRIPTION */}
 
         <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#8c837a]">
           {tool.description}
         </p>
 
-        {/* ================= ACTIONS ================= */}
+        {/* ACTIONS */}
 
         <div className="mt-5 grid grid-cols-2 gap-2 border-t border-[#eee8e1] pt-4">
           <button
@@ -884,10 +876,7 @@ function ToolCard({
   );
 }
 
-// ======================================================
 // STATUS BADGE
-// ======================================================
-
 function StatusBadge({ status }: { status: Tool["status"] }) {
   const styles: Record<Tool["status"], string> = {
     pending: "border-[#f1d39b] bg-[#fff8e8] text-[#b7791f]",

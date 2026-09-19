@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// ================= OWNER =================
+// OWNER
 
 interface Owner {
   id: number;
@@ -47,7 +47,7 @@ interface Owner {
   updated_at?: string;
 }
 
-// ================= JWT =================
+// JWT
 
 interface OwnerToken {
   email?: string;
@@ -56,7 +56,7 @@ interface OwnerToken {
   exp?: number;
 }
 
-// ================= PROFILE FORM =================
+// PROFILE FORM
 
 interface ProfileForm {
   name: string;
@@ -67,7 +67,33 @@ interface ProfileForm {
   profile_image: File | null;
 }
 
-// ================= COMPONENT =================
+// PROFILE IMAGE URL
+
+const getProfileImageUrl = (image?: string) => {
+  if (!image) {
+    return "";
+  }
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
+
+  const cleanApiUrl = apiUrl.replace(/\/$/, "");
+
+  if (image.startsWith("http://") || image.startsWith("https://")) {
+    return image;
+  }
+
+  if (image.startsWith("/uploads/")) {
+    return `${cleanApiUrl}${image}`;
+  }
+
+  if (image.startsWith("uploads/")) {
+    return `${cleanApiUrl}/${image}`;
+  }
+
+  return `${cleanApiUrl}/uploads/${image}`;
+};
+
+// COMPONENT
 
 export default function OwnerProfilePage() {
   const [owner, setOwner] = useState<Owner | null>(null);
@@ -87,9 +113,7 @@ export default function OwnerProfilePage() {
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // =====================================================
   // FETCH OWNER PROFILE
-  // =====================================================
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -104,6 +128,7 @@ export default function OwnerProfilePage() {
         }
 
         const decoded = jwtDecode<OwnerToken>(token);
+
         const email = decoded.email;
 
         if (!email) {
@@ -122,6 +147,13 @@ export default function OwnerProfilePage() {
           toast.error("Owner information not found.");
           return;
         }
+
+        console.log("OWNER DATA:", ownerData);
+        console.log("PROFILE IMAGE:", ownerData.profile_image);
+        console.log(
+          "PROFILE IMAGE URL:",
+          getProfileImageUrl(ownerData.profile_image),
+        );
 
         setOwner(ownerData);
 
@@ -144,9 +176,7 @@ export default function OwnerProfilePage() {
     fetchProfile();
   }, []);
 
-  // =====================================================
   // INPUT CHANGE
-  // =====================================================
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -157,9 +187,7 @@ export default function OwnerProfilePage() {
     }));
   };
 
-  // =====================================================
   // IMAGE CHANGE
-  // =====================================================
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -168,7 +196,7 @@ export default function OwnerProfilePage() {
       return;
     }
 
-    // File size
+    // FILE SIZE
 
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Profile image must be less than 2MB");
@@ -176,7 +204,7 @@ export default function OwnerProfilePage() {
       return;
     }
 
-    // File type
+    // FILE TYPE
 
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
@@ -202,9 +230,7 @@ export default function OwnerProfilePage() {
     });
   };
 
-  // =====================================================
   // CLEAN IMAGE PREVIEW
-  // =====================================================
 
   useEffect(() => {
     return () => {
@@ -214,9 +240,7 @@ export default function OwnerProfilePage() {
     };
   }, [imagePreview]);
 
-  // =====================================================
   // SUBMIT
-  // =====================================================
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -229,9 +253,7 @@ export default function OwnerProfilePage() {
     setShowConfirm(true);
   };
 
-  // =====================================================
   // CONFIRM UPDATE
-  // =====================================================
 
   const handleConfirmUpdate = async () => {
     if (!owner?.id) {
@@ -271,9 +293,13 @@ export default function OwnerProfilePage() {
 
       if (!response.data) {
         toast.error("Profile updated but couldn't reload data");
+
         setShowConfirm(false);
         return;
       }
+
+      console.log("UPDATED OWNER:", response.data);
+      console.log("UPDATED IMAGE:", response.data.profile_image);
 
       setOwner(response.data);
 
@@ -314,43 +340,29 @@ export default function OwnerProfilePage() {
     }
   };
 
-  // =====================================================
   // RETURN
-  // =====================================================
 
   return (
     <OwnerProtected>
       <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
-        {/* ================================================= */}
         {/* SIDEBAR */}
-        {/* ================================================= */}
 
         <OwnerSidebar />
 
-        {/* ================================================= */}
         {/* MAIN AREA */}
-        {/* ================================================= */}
 
-        <div className="lg:ml-[280px]">
-          {/* ================================================= */}
+        <div className="pt-[68px] lg:ml-[280px] lg:pt-0">
           {/* HEADER */}
-          {/* ================================================= */}
 
           <OwnerHeader owner={owner} />
 
-          {/* ================================================= */}
           {/* PAGE CONTENT */}
-          {/* ================================================= */}
 
           <main className="px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
             <div className="mx-auto max-w-[1350px]">
-              {/* ================================================= */}
               {/* PROFILE HERO */}
-              {/* ================================================= */}
 
               <section className="relative mb-8 overflow-hidden rounded-[30px] bg-[#292722] shadow-[0_18px_45px_rgba(41,39,34,0.13)]">
-                {/* Decorative Shapes */}
-
                 <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-[#c1502e]/20" />
 
                 <div className="pointer-events-none absolute -bottom-24 right-28 h-44 w-44 rounded-full bg-[#e4a15b]/10" />
@@ -359,11 +371,7 @@ export default function OwnerProfilePage() {
 
                 <div className="pointer-events-none absolute bottom-6 left-[58%] hidden h-14 w-14 rounded-full border border-white/[0.06] sm:block" />
 
-                {/* Hero Content */}
-
                 <div className="relative px-6 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-9">
-                  {/* Small Label */}
-
                   <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-1.5 backdrop-blur-sm">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#c1502e]">
                       <User className="h-3 w-3 text-white" />
@@ -374,24 +382,16 @@ export default function OwnerProfilePage() {
                     </span>
                   </div>
 
-                  {/* Heading */}
-
                   <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[42px]">
                     Your Profile
                   </h1>
-
-                  {/* Description */}
 
                   <p className="mt-2 max-w-2xl text-sm leading-5 text-white/55 sm:text-[14px]">
                     Manage your personal information, account details and
                     profile image from one place.
                   </p>
 
-                  {/* Bottom Info */}
-
                   <div className="mt-5 flex flex-wrap items-center gap-2.5">
-                    {/* Account Active */}
-
                     <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#6fa875]" />
 
@@ -400,8 +400,6 @@ export default function OwnerProfilePage() {
                       </span>
                     </div>
 
-                    {/* Profile Settings */}
-
                     <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#e4a15b]" />
 
@@ -409,8 +407,6 @@ export default function OwnerProfilePage() {
                         Profile Settings
                       </span>
                     </div>
-
-                    {/* Owner Account */}
 
                     <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#c1502e]" />
@@ -423,9 +419,7 @@ export default function OwnerProfilePage() {
                 </div>
               </section>
 
-              {/* ================================================= */}
               {/* LOADING */}
-              {/* ================================================= */}
 
               {loading ? (
                 <div className="flex min-h-[320px] items-center justify-center rounded-[28px] bg-white shadow-[0_12px_35px_rgba(76,57,30,0.07)]">
@@ -441,13 +435,11 @@ export default function OwnerProfilePage() {
                 </div>
               ) : (
                 <div className="grid items-start gap-5 lg:grid-cols-[290px_1fr]">
-                  {/* ================================================= */}
                   {/* LEFT PROFILE CARD */}
-                  {/* ================================================= */}
 
                   <section className="overflow-hidden rounded-[28px] bg-gradient-to-br from-white via-[#fffdf9] to-[#f5ecdf] p-5 shadow-[0_12px_35px_rgba(76,57,30,0.07)]">
                     <div className="flex flex-col items-center text-center">
-                      {/* Profile Photo */}
+                      {/* MAIN PROFILE PHOTO */}
 
                       <div className="relative">
                         {imagePreview ? (
@@ -458,9 +450,15 @@ export default function OwnerProfilePage() {
                           />
                         ) : owner?.profile_image ? (
                           <img
-                            src={owner.profile_image}
+                            src={getProfileImageUrl(owner.profile_image)}
                             alt={owner.name}
                             className="h-28 w-28 rounded-[28px] object-cover shadow-[0_10px_25px_rgba(76,57,30,0.12)]"
+                            onError={(event) => {
+                              console.error(
+                                "Owner profile image failed:",
+                                event.currentTarget.src,
+                              );
+                            }}
                           />
                         ) : (
                           <div className="flex h-28 w-28 items-center justify-center rounded-[28px] bg-gradient-to-br from-[#e8a33d] to-[#c1502e] text-4xl font-bold text-white shadow-[0_10px_25px_rgba(193,80,46,0.18)]">
@@ -484,10 +482,10 @@ export default function OwnerProfilePage() {
                       </p>
                     </div>
 
-                    {/* Owner Details */}
+                    {/* OWNER DETAILS */}
 
                     <div className="mt-6 space-y-2.5">
-                      {/* Owner ID */}
+                      {/* OWNER ID */}
 
                       <div className="flex items-center gap-3 rounded-2xl bg-white/80 px-3.5 py-3 shadow-sm">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#fff0d9]">
@@ -505,7 +503,7 @@ export default function OwnerProfilePage() {
                         </div>
                       </div>
 
-                      {/* Phone */}
+                      {/* PHONE */}
 
                       <div className="flex items-center gap-3 rounded-2xl bg-white/80 px-3.5 py-3 shadow-sm">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f9eadb]">
@@ -523,7 +521,7 @@ export default function OwnerProfilePage() {
                         </div>
                       </div>
 
-                      {/* Role */}
+                      {/* ROLE */}
 
                       <div className="flex items-center gap-3 rounded-2xl bg-white/80 px-3.5 py-3 shadow-sm">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#fff0d9]">
@@ -543,13 +541,9 @@ export default function OwnerProfilePage() {
                     </div>
                   </section>
 
-                  {/* ================================================= */}
                   {/* RIGHT FORM */}
-                  {/* ================================================= */}
 
                   <section className="rounded-[28px] bg-gradient-to-br from-white via-[#fffdf9] to-[#f6efe6] p-5 shadow-[0_12px_35px_rgba(76,57,30,0.07)] sm:p-6">
-                    {/* Form Header */}
-
                     <div className="mb-6 flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#fff0d5] to-[#f8dfb5]">
                         <User className="h-5 w-5 text-[#c1502e]" />
@@ -567,13 +561,9 @@ export default function OwnerProfilePage() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                      {/* ================================================= */}
                       {/* NAME + EMAIL */}
-                      {/* ================================================= */}
 
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {/* Name */}
-
                         <div>
                           <label
                             htmlFor="name"
@@ -598,8 +588,6 @@ export default function OwnerProfilePage() {
                             />
                           </div>
                         </div>
-
-                        {/* Email */}
 
                         <div>
                           <label
@@ -627,13 +615,9 @@ export default function OwnerProfilePage() {
                         </div>
                       </div>
 
-                      {/* ================================================= */}
                       {/* PHONE + NID */}
-                      {/* ================================================= */}
 
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {/* Phone */}
-
                         <div>
                           <label
                             htmlFor="phone"
@@ -656,8 +640,6 @@ export default function OwnerProfilePage() {
                             />
                           </div>
                         </div>
-
-                        {/* NID */}
 
                         <div>
                           <label
@@ -684,9 +666,7 @@ export default function OwnerProfilePage() {
                         </div>
                       </div>
 
-                      {/* ================================================= */}
                       {/* PASSWORD */}
-                      {/* ================================================= */}
 
                       <div>
                         <label
@@ -717,9 +697,7 @@ export default function OwnerProfilePage() {
                         </p>
                       </div>
 
-                      {/* ================================================= */}
                       {/* PROFILE IMAGE */}
-                      {/* ================================================= */}
 
                       <div>
                         <label className="mb-2.5 block text-[10px] font-bold uppercase tracking-wider text-[#77736d]">
@@ -727,77 +705,41 @@ export default function OwnerProfilePage() {
                         </label>
 
                         <div className="rounded-[22px] bg-white p-4 shadow-[0_8px_25px_rgba(76,57,30,0.06)]">
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                            {/* IMAGE PREVIEW */}
+                          {/* UPLOAD AREA ONLY */}
 
-                            <div className="relative flex shrink-0 justify-center sm:justify-start">
-                              <div className="h-[92px] w-[92px] overflow-hidden rounded-[20px] bg-[#f7f3ec] shadow-[0_5px_15px_rgba(76,57,30,0.08)]">
-                                {imagePreview ? (
-                                  <img
-                                    src={imagePreview}
-                                    alt="Selected profile"
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : owner?.profile_image ? (
-                                  <img
-                                    src={owner.profile_image}
-                                    alt={owner.name}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#e8a33d] to-[#c1502e] text-3xl font-bold text-white">
-                                    {owner?.name
-                                      ? owner.name.charAt(0).toUpperCase()
-                                      : "O"}
-                                  </div>
-                                )}
+                          <label
+                            htmlFor="profile_image"
+                            className="group flex min-h-[110px] cursor-pointer items-center justify-center rounded-[18px] border-2 border-dashed border-[#e8dfd2] bg-[#fcfaf6] px-5 py-5 transition-all duration-200 hover:border-[#e8a33d] hover:bg-[#fff8ed]"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fff0d9] transition group-hover:scale-105">
+                                <Camera className="h-5 w-5 text-[#c1502e]" />
                               </div>
 
-                              {/* Camera Icon */}
+                              <div>
+                                <p className="text-sm font-bold text-[#292722]">
+                                  Choose a profile image
+                                </p>
 
-                              <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_4px_12px_rgba(76,57,30,0.15)]">
-                                <Camera className="h-3.5 w-3.5 text-[#c1502e]" />
+                                <p className="mt-1 text-[11px] text-[#999188]">
+                                  Click here to upload a new photo
+                                </p>
+
+                                <p className="mt-1.5 text-[10px] font-medium text-[#aaa39a]">
+                                  JPG · JPEG · PNG · WEBP · Max 2MB
+                                </p>
                               </div>
                             </div>
 
-                            {/* UPLOAD AREA */}
-
-                            <label
-                              htmlFor="profile_image"
-                              className="group flex min-h-[92px] flex-1 cursor-pointer items-center justify-center rounded-[18px] border-2 border-dashed border-[#e8dfd2] bg-[#fcfaf6] px-5 py-4 transition-all duration-200 hover:border-[#e8a33d] hover:bg-[#fff8ed]"
-                            >
-                              <div className="flex items-center gap-4">
-                                {/* Upload Icon */}
-
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#fff0d9] transition group-hover:scale-105">
-                                  <Camera className="h-5 w-5 text-[#c1502e]" />
-                                </div>
-
-                                <div>
-                                  <p className="text-sm font-bold text-[#292722]">
-                                    Choose a profile image
-                                  </p>
-
-                                  <p className="mt-1 text-[11px] text-[#999188]">
-                                    Click here to upload a new photo
-                                  </p>
-
-                                  <p className="mt-1.5 text-[10px] font-medium text-[#aaa39a]">
-                                    JPG · JPEG · PNG · WEBP · Max 2MB
-                                  </p>
-                                </div>
-                              </div>
-
-                              <input
-                                id="profile_image"
-                                name="profile_image"
-                                type="file"
-                                accept=".jpg,.jpeg,.png,.webp"
-                                onChange={handleImageChange}
-                                className="hidden"
-                              />
-                            </label>
-                          </div>
+                            <input
+                              id="profile_image"
+                              name="profile_image"
+                              type="file"
+                              accept=".jpg,.jpeg,.png,.webp"
+                              onChange={handleImageChange}
+                              className="hidden"
+                            />
+                          </label>
 
                           {/* SELECTED FILE */}
 
@@ -821,9 +763,7 @@ export default function OwnerProfilePage() {
                         </div>
                       </div>
 
-                      {/* ================================================= */}
                       {/* SAVE BUTTON */}
-                      {/* ================================================= */}
 
                       <div className="flex justify-end pt-1">
                         <button
@@ -845,9 +785,7 @@ export default function OwnerProfilePage() {
                 </div>
               )}
 
-              {/* ================================================= */}
               {/* CONFIRMATION DIALOG */}
-              {/* ================================================= */}
 
               <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
                 <AlertDialogContent className="rounded-[28px] border-0 bg-[#fffdf9] shadow-[0_25px_70px_rgba(60,45,25,0.18)]">

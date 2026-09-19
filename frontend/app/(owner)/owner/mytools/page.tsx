@@ -10,7 +10,7 @@ import OwnerHeader from "@/components/dashboard/owner/OwnerHeader";
 import OwnerTools from "@/components/dashboard/owner/OwnerTools";
 import api from "@/lib/axios";
 
-// ================= OWNER =================
+// OWNER 
 
 interface Owner {
   id: number;
@@ -20,7 +20,7 @@ interface Owner {
   profile_image?: string;
 }
 
-// ================= JWT =================
+// JWT 
 
 interface OwnerToken {
   email?: string;
@@ -29,7 +29,7 @@ interface OwnerToken {
   exp?: number;
 }
 
-// ================= PAGE =================
+// PAGE 
 
 export default function OwnerToolsPage() {
   const [owner, setOwner] = useState<Owner | null>(null);
@@ -38,7 +38,7 @@ export default function OwnerToolsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ================= LOAD OWNER =================
+  // LOAD OWNER 
 
   useEffect(() => {
     const loadOwner = async () => {
@@ -46,7 +46,7 @@ export default function OwnerToolsPage() {
         setLoading(true);
         setError("");
 
-        // ================= GET TOKEN =================
+        // GET TOKEN 
 
         const token = localStorage.getItem("access_token");
 
@@ -55,7 +55,7 @@ export default function OwnerToolsPage() {
           return;
         }
 
-        // ================= DECODE TOKEN =================
+        // DECODE TOKEN 
 
         const decoded = jwtDecode<OwnerToken>(token);
         const email = decoded.email;
@@ -65,11 +65,11 @@ export default function OwnerToolsPage() {
           return;
         }
 
-        // ================= GET ALL OWNERS =================
+        // GET ALL OWNERS 
 
         const response = await api.get<Owner[]>("/owner/listall");
 
-        // ================= FIND CURRENT OWNER =================
+        //  FIND CURRENT OWNER 
 
         const currentOwner = response.data.find(
           (item) =>
@@ -81,8 +81,7 @@ export default function OwnerToolsPage() {
           return;
         }
 
-        // ================= SAVE OWNER =================
-
+        // SAVE OWNER 
         setOwner(currentOwner);
         setOwnerId(currentOwner.id);
 
@@ -101,24 +100,37 @@ export default function OwnerToolsPage() {
   return (
     <OwnerProtected>
       <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
+        {/* SIDEBAR  */}
+
         <OwnerSidebar />
 
-        <div className="lg:ml-[280px]">
+        {/* MAIN AREA  */}
+
+        <div className="pt-[68px] lg:ml-[280px] lg:pt-0">
+          {/* HEADER  */}
+
           <OwnerHeader owner={owner} />
+
+          {/* PAGE CONTENT  */}
 
           <main className="px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
             <div className="mx-auto max-w-[1280px]">
+              {/* LOADING  */}
+
               {loading ? (
                 <div className="flex min-h-[400px] items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-[#c1502e]" />
                 </div>
               ) : error ? (
+                /* ERROR */
                 <div className="rounded-[18px] border border-[#f2c6c2] bg-[#fff5f3] px-4 py-3 text-sm font-medium text-[#c1502e]">
                   {error}
                 </div>
               ) : ownerId !== null ? (
+                /* TOOLS  */
                 <OwnerTools ownerId={ownerId} />
               ) : (
+                /*  NO OWNER */
                 <div className="rounded-[18px] border border-[#f2c6c2] bg-[#fff5f3] px-4 py-3 text-sm font-medium text-[#c1502e]">
                   Owner information is unavailable.
                 </div>

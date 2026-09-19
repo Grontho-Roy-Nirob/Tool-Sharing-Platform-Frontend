@@ -21,7 +21,7 @@ import OwnerSidebar from "@/components/dashboard/owner/OwnerSidebar";
 import OwnerHeader from "@/components/dashboard/owner/OwnerHeader";
 import api from "@/lib/axios";
 
-// ================= OWNER =================
+// OWNER 
 
 interface Owner {
   id: number;
@@ -31,7 +31,7 @@ interface Owner {
   profile_image?: string;
 }
 
-// ================= JWT =================
+// JWT 
 
 interface OwnerToken {
   email?: string;
@@ -40,7 +40,7 @@ interface OwnerToken {
   exp?: number;
 }
 
-// ================= TOOL =================
+// TOOL 
 
 interface Tool {
   id: number;
@@ -54,7 +54,7 @@ interface Tool {
   tool_image?: string;
 }
 
-// ================= COMPONENT =================
+// COMPONENT
 
 export default function OwnerDashboard() {
   const [owner, setOwner] = useState<Owner | null>(null);
@@ -62,7 +62,7 @@ export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ================= LOAD DASHBOARD =================
+  // LOAD DASHBOARD 
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -70,7 +70,7 @@ export default function OwnerDashboard() {
         setLoading(true);
         setError("");
 
-        // ================= LOGIN MESSAGE =================
+        // LOGIN MESSAGE 
 
         const loginSuccess = localStorage.getItem("login_success");
 
@@ -80,7 +80,7 @@ export default function OwnerDashboard() {
           localStorage.removeItem("login_success");
         }
 
-        // ================= GET TOKEN =================
+        // GET TOKEN
 
         const token = localStorage.getItem("access_token");
 
@@ -89,8 +89,7 @@ export default function OwnerDashboard() {
           return;
         }
 
-        // ================= DECODE TOKEN =================
-
+        // DECODE TOKEN 
         const decoded = jwtDecode<OwnerToken>(token);
 
         const email = decoded.email;
@@ -100,11 +99,10 @@ export default function OwnerDashboard() {
           return;
         }
 
-        // ================= GET ALL OWNERS =================
-
+        // GET ALL OWNERS 
         const ownerResponse = await api.get<Owner[]>("/owner/listall");
 
-        // ================= FIND LOGGED-IN OWNER =================
+        // FIND LOGGED-IN OWNER 
 
         const ownerData = ownerResponse.data.find(
           (item) =>
@@ -116,15 +114,15 @@ export default function OwnerDashboard() {
           return;
         }
 
-        // ================= SET OWNER =================
+        //SET OWNER 
 
         setOwner(ownerData);
 
-        // ================= SAVE OWNER FOR HEADER =================
+        // SAVE OWNER FOR HEADER
 
         localStorage.setItem("owner_data", JSON.stringify(ownerData));
 
-        // ================= GET OWNER TOOLS =================
+        // GET OWNER TOOLS 
 
         const toolsResponse = await api.get<Tool[]>(
           `/owner/tools/${ownerData.id}`,
@@ -143,7 +141,7 @@ export default function OwnerDashboard() {
     loadDashboard();
   }, []);
 
-  // ================= TOOL COUNTS =================
+  // TOOL COUNTS 
 
   const pendingTools = tools.filter((tool) => tool.status === "pending").length;
 
@@ -155,7 +153,7 @@ export default function OwnerDashboard() {
     (tool) => tool.status === "rejected",
   ).length;
 
-  // ================= STATUS TEXT =================
+  // STATUS TEXT
 
   const getStatusText = (status: string) => {
     if (status === "approved") {
@@ -169,7 +167,7 @@ export default function OwnerDashboard() {
     return "Pending";
   };
 
-  // ================= STATUS STYLE =================
+  // STATUS STYLE 
 
   const getStatusStyle = (status: string) => {
     if (status === "approved") {
@@ -183,7 +181,7 @@ export default function OwnerDashboard() {
     return "border-[#f1d39b] bg-[#fff8e8] text-[#b7791f]";
   };
 
-  // ================= STATUS ICON =================
+  // STATUS ICON
 
   const getStatusIcon = (status: string) => {
     if (status === "approved") {
@@ -197,37 +195,23 @@ export default function OwnerDashboard() {
     return <Clock3 className="h-3.5 w-3.5" />;
   };
 
-  // ================= RETURN =================
+  // RETURN 
 
   return (
     <OwnerProtected>
       <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
-        {/* ================================================= */}
         {/* SIDEBAR */}
-        {/* ================================================= */}
-
         <OwnerSidebar />
 
-        {/* ================================================= */}
         {/* MAIN AREA */}
-        {/* ================================================= */}
-
-        <div className="lg:ml-[280px]">
-          {/* ================================================= */}
+        <div className="pt-[72px] lg:ml-[280px] lg:pt-0">
           {/* HEADER */}
-          {/* ================================================= */}
-
           <OwnerHeader owner={owner} />
-
-          {/* ================================================= */}
+          
           {/* PAGE CONTENT */}
-          {/* ================================================= */}
-
           <main className="px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
             <div className="mx-auto max-w-[1280px]">
-              {/* ================================================= */}
               {/* HERO */}
-              {/* ================================================= */}
 
               <section className="relative mb-6 overflow-hidden rounded-[24px] bg-[#292722] shadow-[0_12px_32px_rgba(41,39,34,0.12)]">
                 {/* Decorative Shapes */}
@@ -240,10 +224,7 @@ export default function OwnerDashboard() {
 
                 <div className="pointer-events-none absolute bottom-6 left-[62%] hidden h-12 w-12 rounded-full border border-white/[0.05] sm:block" />
 
-                {/* ================================================= */}
                 {/* HERO CONTENT */}
-                {/* ================================================= */}
-
                 <div className="relative px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
                   {/* LABEL */}
 
@@ -258,14 +239,12 @@ export default function OwnerDashboard() {
                   </div>
 
                   {/* HEADING */}
-
                   <h1 className="max-w-3xl text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-[36px]">
                     Welcome back
                     {owner?.name ? `, ${owner.name}` : ""}
                   </h1>
 
                   {/* DESCRIPTION */}
-
                   <p className="mt-2 max-w-xl text-xs leading-5 text-white/50 sm:text-sm">
                     Manage your tools, track approval status and keep your
                     ToolShare rentals organized from one place.
@@ -273,10 +252,8 @@ export default function OwnerDashboard() {
                 </div>
               </section>
 
-              {/* ================================================= */}
-              {/* LOADING */}
-              {/* ================================================= */}
 
+              {/* LOADING */}
               {loading && (
                 <div className="space-y-5">
                   {/* Statistics Skeleton */}
@@ -291,31 +268,22 @@ export default function OwnerDashboard() {
                   </div>
 
                   {/* Tools Skeleton */}
-
                   <div className="h-[350px] animate-pulse rounded-[22px] bg-white" />
                 </div>
               )}
 
-              {/* ================================================= */}
               {/* ERROR */}
-              {/* ================================================= */}
-
               {!loading && error && (
                 <div className="rounded-[18px] border border-[#f2c6c2] bg-[#fff5f3] px-4 py-3 text-sm font-medium text-[#c1502e]">
                   {error}
                 </div>
               )}
 
-              {/* ================================================= */}
               {/* DASHBOARD CONTENT */}
-              {/* ================================================= */}
-
               {!loading && !error && (
                 <>
-                  {/* ================================================= */}
-                  {/* STATISTICS */}
-                  {/* ================================================= */}
 
+                  {/* STATISTICS */}
                   <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {/* TOTAL */}
 
@@ -422,10 +390,8 @@ export default function OwnerDashboard() {
                     </div>
                   </section>
 
-                  {/* ================================================= */}
-                  {/* RECENT TOOLS */}
-                  {/* ================================================= */}
 
+                  {/* RECENT TOOLS */}
                   <section className="mt-5 overflow-hidden rounded-[22px] bg-white shadow-[0_8px_28px_rgba(55,45,30,0.055)]">
                     {/* HEADER */}
 
@@ -562,10 +528,8 @@ export default function OwnerDashboard() {
                     </div>
                   </section>
 
-                  {/* ================================================= */}
-                  {/* QUICK ACTIONS */}
-                  {/* ================================================= */}
 
+                  {/* QUICK ACTIONS */}
                   <section className="mt-5 grid gap-3 md:grid-cols-2">
                     {/* MANAGE TOOLS */}
 
@@ -630,14 +594,12 @@ export default function OwnerDashboard() {
                     </Link>
                   </section>
 
-                  {/* ================================================= */}
-                  {/* BOTTOM NOTE */}
-                  {/* ================================================= */}
 
+                  {/* BOTTOM NOTE */}
                   <div className="mt-5 flex items-center justify-center gap-2">
                     <div className="h-1 w-1 rounded-full bg-[#c1502e]" />
 
-                    <p className="text-[10px] text-[#9a948b]">
+                    <p className="text-center text-[10px] text-[#9a948b]">
                       Your dashboard shows only tools belonging to your owner
                       account.
                     </p>

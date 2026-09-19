@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -21,7 +20,7 @@ import OwnerOrders from "@/components/dashboard/owner/OwnerOrders";
 
 import api from "@/lib/axios";
 
-// ================= OWNER =================
+// OWNER
 
 interface Owner {
   id: number;
@@ -31,7 +30,7 @@ interface Owner {
   profile_image?: string;
 }
 
-// ================= JWT =================
+// JWT
 
 interface OwnerToken {
   email?: string;
@@ -39,20 +38,20 @@ interface OwnerToken {
   exp?: number;
 }
 
-// ================= PAGE =================
+//PAGE
 
 export default function OwnerOrdersPage() {
   const [owner, setOwner] = useState<Owner | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ================= GET OWNER =================
+  // GET OWNER
 
   useEffect(() => {
     const fetchOwner = async () => {
       try {
         setLoading(true);
 
-        // ================= TOKEN =================
+        // TOKEN
 
         const token = localStorage.getItem("access_token");
 
@@ -61,7 +60,7 @@ export default function OwnerOrdersPage() {
           return;
         }
 
-        // ================= DECODE TOKEN =================
+        // DECODE TOKEN
 
         const decoded = jwtDecode<OwnerToken>(token);
 
@@ -72,11 +71,11 @@ export default function OwnerOrdersPage() {
           return;
         }
 
-        // ================= GET OWNERS =================
+        // GET OWNERS
 
         const response = await api.get<Owner[]>("/owner/listall");
 
-        // ================= FIND CURRENT OWNER =================
+        //FIND CURRENT OWNER
 
         const ownerData = response.data.find(
           (item) =>
@@ -88,7 +87,7 @@ export default function OwnerOrdersPage() {
           return;
         }
 
-        // ================= SET OWNER =================
+        // SET OWNER
 
         setOwner({
           id: ownerData.id,
@@ -109,39 +108,21 @@ export default function OwnerOrdersPage() {
     fetchOwner();
   }, []);
 
-  // ================= UI =================
-
   return (
     <OwnerProtected>
       <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
-        {/* ================================================= */}
         {/* SIDEBAR */}
-        {/* ================================================= */}
-
         <OwnerSidebar />
 
-        {/* ================================================= */}
         {/* MAIN CONTENT */}
-        {/* ================================================= */}
-
-        <div className="lg:ml-[280px]">
-          {/* ================================================= */}
+        <div className="pt-[68px] lg:ml-[280px] lg:pt-0">
           {/* HEADER */}
-          {/* ================================================= */}
-
           <OwnerHeader owner={owner} />
 
-          {/* ================================================= */}
           {/* PAGE CONTENT */}
-          {/* ================================================= */}
-
           <main className="px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
             <div className="mx-auto max-w-[1350px]">
-
-              {/* ================================================= */}
               {/* HERO */}
-              {/* ================================================= */}
-
               <section className="relative mb-8 overflow-hidden rounded-[30px] bg-[#292722] shadow-[0_18px_45px_rgba(41,39,34,0.13)]">
                 {/* Decorative shapes */}
 
@@ -203,13 +184,9 @@ export default function OwnerOrdersPage() {
                 </div>
               </section>
 
-              {/* ================================================= */}
               {/* OWNER INFO */}
-              {/* ================================================= */}
-
               {!loading && owner && (
                 <section className="mb-8 grid gap-4 md:grid-cols-3">
-
                   {/* OWNER */}
 
                   <div className="rounded-[22px] bg-white p-5 shadow-[0_8px_30px_rgba(55,45,30,0.055)]">
@@ -272,10 +249,7 @@ export default function OwnerOrdersPage() {
                 </section>
               )}
 
-              {/* ================================================= */}
               {/* ORDERS HEADER */}
-              {/* ================================================= */}
-
               <section>
                 <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
@@ -293,10 +267,7 @@ export default function OwnerOrdersPage() {
                   </p>
                 </div>
 
-                {/* ================================================= */}
                 {/* LOADING */}
-                {/* ================================================= */}
-
                 {loading ? (
                   <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white shadow-[0_10px_35px_rgba(55,45,30,0.06)]">
                     <div className="flex flex-col items-center">
@@ -314,18 +285,12 @@ export default function OwnerOrdersPage() {
                     </div>
                   </div>
                 ) : owner ? (
-                  /* ================================================= */
                   /* ORDERS */
-                  /* ================================================= */
-
                   <div className="rounded-[28px] bg-white p-4 shadow-[0_10px_35px_rgba(55,45,30,0.06)] sm:p-5 lg:p-6">
                     <OwnerOrders ownerId={owner.id} />
                   </div>
                 ) : (
-                  /* ================================================= */
                   /* OWNER NOT FOUND */
-                  /* ================================================= */
-
                   <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white px-6 shadow-[0_10px_35px_rgba(55,45,30,0.06)]">
                     <div className="max-w-sm text-center">
                       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#f8ece6]">
@@ -345,9 +310,7 @@ export default function OwnerOrdersPage() {
                 )}
               </section>
 
-              {/* ================================================= */}
               {/* BOTTOM NOTE */}
-              {/* ================================================= */}
 
               {!loading && owner && (
                 <div className="mt-8 flex items-center justify-center gap-2.5">

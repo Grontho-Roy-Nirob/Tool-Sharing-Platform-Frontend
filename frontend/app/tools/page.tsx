@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowDownUp, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  ArrowDownUp,
+  ChevronDown,
+  MapPin,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Tag,
+  X,
+} from "lucide-react";
 
 import { getPublicTools, PublicTool } from "@/lib/toolapi";
 import PublicToolCard from "@/components/tools/PublicToolCard";
@@ -61,7 +70,7 @@ export default function ToolsPage() {
     fetchTools();
   }, []);
 
-  /*  Filter options */
+  /* ================= FILTER OPTIONS ================= */
 
   const categories = useMemo(() => {
     return Array.from(
@@ -79,12 +88,11 @@ export default function ToolsPage() {
     );
   }, [tools]);
 
-  /*  Filter + Search + Sort */
+  /* ================= FILTER + SEARCH + SORT ================= */
 
   const filteredTools = useMemo(() => {
     let result = [...tools];
 
-    // Search
     const query = search.trim().toLowerCase();
 
     if (query) {
@@ -101,17 +109,14 @@ export default function ToolsPage() {
       );
     }
 
-    // Category
     if (category !== "all") {
       result = result.filter((tool) => tool.category?.name === category);
     }
 
-    // Location
     if (location !== "all") {
       result = result.filter((tool) => tool.location === location);
     }
 
-    // Availability
     if (availability === "available") {
       result = result.filter((tool) => tool.is_available);
     }
@@ -120,7 +125,6 @@ export default function ToolsPage() {
       result = result.filter((tool) => !tool.is_available);
     }
 
-    // Sorting
     if (sort === "price-low") {
       result.sort(
         (a, b) =>
@@ -165,154 +169,289 @@ export default function ToolsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#090a0c] px-4 pb-24 pt-32 text-white sm:px-8">
-      <div className="mx-auto max-w-1152px">
-        {/* Header */}
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-white via-[#FCF9FF] to-[#F3CCFF]/25 px-4 pb-24 pt-32 text-[#281832] sm:px-8">
+      {/* ================= BACKGROUND GLOW ================= */}
+
+      <div className="pointer-events-none absolute left-[-180px] top-[120px] h-[380px] w-[380px] rounded-full bg-[#E9D5FF]/30 blur-[120px]" />
+
+      <div className="pointer-events-none absolute right-[-180px] top-[450px] h-[420px] w-[420px] rounded-full bg-[#FFF7D6]/35 blur-[130px]" />
+
+      <div className="pointer-events-none absolute bottom-[100px] left-[35%] h-[300px] w-[300px] rounded-full bg-[#E9D5FF]/20 blur-[120px]" />
+
+      <div className="relative z-10 mx-auto max-w-[1280px]">
+        {/* ================= HEADER ================= */}
+
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#292b30] bg-[#0d0e10] px-4 py-2 text-sm text-[#a5a5ab]">
-            <span className="size-1.5 rounded-full bg-white" />
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#D8C2F0] bg-white/80 px-4 py-2 text-sm font-semibold text-[#7C3AED] shadow-[0_8px_25px_rgba(124,58,237,0.08)] backdrop-blur-xl">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-2 animate-ping rounded-full bg-[#A855F7]/40" />
+              <span className="relative size-2 rounded-full bg-[#A855F7]" />
+            </span>
             Community marketplace
           </div>
 
-          <h1 className="max-w-3xl text-4xl font-medium tracking-[-0.06em] sm:text-6xl">
-            Find the right tool for the job.
+          <h1 className="max-w-3xl text-4xl font-medium tracking-[-0.06em] text-[#281832] sm:text-6xl">
+            Find the{" "}
+            <span className="bg-gradient-to-r from-[#7C3AED] via-[#A855F7] to-[#C084FC] bg-clip-text text-transparent">
+              right tool
+            </span>{" "}
+            for the job.
           </h1>
 
-          <p className="mt-5 max-w-2xl text-base leading-7 text-[#96979f] sm:text-lg">
+          <p className="mt-5 max-w-2xl text-base leading-7 text-[#6d5c76] sm:text-lg">
             Browse tools shared by people in your community. Search, filter, and
             find exactly what you need.
           </p>
         </motion.div>
 
-        {/* Search + Filters */}
-        <div className="mt-12 space-y-4">
-          {/* Search */}
+        {/* ================================================= */}
+        {/* PREMIUM SEARCH + FILTER AREA */}
+        {/* ================================================= */}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.1 }}
+          className="mt-10"
+        >
+          {/* ================= SEARCH ================= */}
+
           <div className="relative">
-            <Search className="absolute left-5 top-1/2 size-5 -translate-y-1/2 text-[#686a72]" />
+            {/* Gradient border */}
+            <div className="absolute -inset-[1px] rounded-[24px] bg-gradient-to-r from-[#C084FC]/70 via-[#E9D5FF] to-[#FDE68A]/70 opacity-80 blur-[1px]" />
 
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tools, brands, locations..."
-              className="h-14 w-full rounded-2xl border border-[#292b30] bg-[#0d0e10] pl-13 pr-12 text-sm text-white outline-none transition-colors placeholder:text-[#686a72] focus:border-[#45474d]"
-            />
+            <div className="relative flex items-center rounded-[23px] border border-white/80 bg-white/95 px-4 shadow-[0_16px_45px_rgba(124,58,237,0.10)] backdrop-blur-xl transition-all duration-300 hover:shadow-[0_20px_55px_rgba(124,58,237,0.14)] focus-within:border-[#A855F7]/60 focus-within:shadow-[0_20px_55px_rgba(124,58,237,0.16)]">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F3E8FF] to-[#EDE9FE] text-[#7C3AED] shadow-sm">
+                <Search className="size-5" />
+              </div>
 
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#686a72] transition-colors hover:text-white"
-              >
-                <X className="size-4" />
-              </button>
-            )}
-          </div>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tools, brands, locations..."
+                className="h-16 w-full bg-transparent px-4 text-sm font-medium text-[#281832] outline-none placeholder:text-[#A298A9]"
+              />
 
-          {/* Filters */}
-          <div className="flex flex-col gap-3 lg:flex-row">
-            <div className="flex flex-1 items-center gap-3 overflow-x-auto">
-              <SlidersHorizontal className="hidden size-4 shrink-0 text-[#686a72] lg:block" />
-
-              {/* Category */}
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="h-11 min-w-[160px] rounded-xl border border-[#292b30] bg-[#0d0e10] px-4 text-sm text-[#a5a5ab] outline-none focus:border-[#45474d]"
-              >
-                <option value="all">All categories</option>
-
-                {categories.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-
-              {/* Location */}
-              <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="h-11 min-w-[160px] rounded-xl border border-[#292b30] bg-[#0d0e10] px-4 text-sm text-[#a5a5ab] outline-none focus:border-[#45474d]"
-              >
-                <option value="all">All locations</option>
-
-                {locations.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-
-              {/* Availability */}
-              <select
-                value={availability}
-                onChange={(e) => setAvailability(e.target.value)}
-                className="h-11 min-w-[150px] rounded-xl border border-[#292b30] bg-[#0d0e10] px-4 text-sm text-[#a5a5ab] outline-none focus:border-[#45474d]"
-              >
-                <option value="all">Any availability</option>
-                <option value="available">Available</option>
-                <option value="unavailable">Unavailable</option>
-              </select>
-            </div>
-
-            {/* Sort */}
-            <div className="flex items-center gap-2">
-              <ArrowDownUp className="size-4 text-[#686a72]" />
-
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="h-11 w-full rounded-xl border border-[#292b30] bg-[#0d0e10] px-4 text-sm text-[#a5a5ab] outline-none focus:border-[#45474d] lg:w-[180px]"
-              >
-                <option value="newest">Newest</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="name">Name: A-Z</option>
-              </select>
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#F3E8FF] text-[#806D8D] transition-all duration-300 hover:rotate-90 hover:bg-[#E9D5FF] hover:text-[#7C3AED]"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Active filters */}
+          {/* ================= FILTER PANEL ================= */}
+
+          <div className="relative mt-4 overflow-hidden rounded-[26px] border border-[#E4D5EF] bg-white/75 p-3 shadow-[0_14px_40px_rgba(92,45,130,0.08)] backdrop-blur-xl">
+            {/* top gradient line */}
+            <div className="absolute left-0 right-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#A855F7] to-transparent opacity-70" />
+
+            <div className="mb-3 flex items-center gap-2 px-1">
+              <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#F3E8FF] to-[#FFF7D6] text-[#7C3AED]">
+                <SlidersHorizontal className="size-4" />
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-[#3C3043]">
+                  Refine your search
+                </p>
+
+                <p className="text-[10px] text-[#998DA0]">
+                  Filter tools by category, location and availability
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {/* ================= CATEGORY ================= */}
+
+              <div className="group relative">
+                <div className="mb-1.5 flex items-center gap-1.5 px-1">
+                  <Tag className="size-3 text-[#A855F7]" />
+
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#817487]">
+                    Category
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="h-12 w-full cursor-pointer appearance-none rounded-2xl border border-[#E2D3ED] bg-gradient-to-br from-white to-[#FBF8FF] px-4 pr-11 text-sm font-semibold text-[#4E4155] shadow-[0_5px_15px_rgba(92,45,130,0.05)] outline-none transition-all duration-300 hover:-translate-y-0.5 hover:border-[#C084FC] hover:shadow-[0_10px_22px_rgba(124,58,237,0.10)] focus:border-[#A855F7] focus:ring-4 focus:ring-[#E9D5FF]/60"
+                  >
+                    <option value="all">All categories</option>
+
+                    {categories.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="pointer-events-none absolute right-3 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg bg-[#F3E8FF] text-[#7C3AED]">
+                    <ChevronDown className="size-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* ================= LOCATION ================= */}
+
+              <div className="group relative">
+                <div className="mb-1.5 flex items-center gap-1.5 px-1">
+                  <MapPin className="size-3 text-[#A855F7]" />
+
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#817487]">
+                    Location
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="h-12 w-full cursor-pointer appearance-none rounded-2xl border border-[#E2D3ED] bg-gradient-to-br from-white to-[#FBF8FF] px-4 pr-11 text-sm font-semibold text-[#4E4155] shadow-[0_5px_15px_rgba(92,45,130,0.05)] outline-none transition-all duration-300 hover:-translate-y-0.5 hover:border-[#C084FC] hover:shadow-[0_10px_22px_rgba(124,58,237,0.10)] focus:border-[#A855F7] focus:ring-4 focus:ring-[#E9D5FF]/60"
+                  >
+                    <option value="all">All locations</option>
+
+                    {locations.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="pointer-events-none absolute right-3 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg bg-[#F3E8FF] text-[#7C3AED]">
+                    <ChevronDown className="size-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* ================= AVAILABILITY ================= */}
+
+              <div className="group relative">
+                <div className="mb-1.5 flex items-center gap-1.5 px-1">
+                  <Sparkles className="size-3 text-[#A855F7]" />
+
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#817487]">
+                    Availability
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={availability}
+                    onChange={(e) => setAvailability(e.target.value)}
+                    className="h-12 w-full cursor-pointer appearance-none rounded-2xl border border-[#E2D3ED] bg-gradient-to-br from-white to-[#FBF8FF] px-4 pr-11 text-sm font-semibold text-[#4E4155] shadow-[0_5px_15px_rgba(92,45,130,0.05)] outline-none transition-all duration-300 hover:-translate-y-0.5 hover:border-[#C084FC] hover:shadow-[0_10px_22px_rgba(124,58,237,0.10)] focus:border-[#A855F7] focus:ring-4 focus:ring-[#E9D5FF]/60"
+                  >
+                    <option value="all">Any availability</option>
+
+                    <option value="available">Available</option>
+
+                    <option value="unavailable">Unavailable</option>
+                  </select>
+
+                  <div className="pointer-events-none absolute right-3 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg bg-[#F3E8FF] text-[#7C3AED]">
+                    <ChevronDown className="size-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* ================= SORT ================= */}
+
+              <div className="group relative">
+                <div className="mb-1.5 flex items-center gap-1.5 px-1">
+                  <ArrowDownUp className="size-3 text-[#A855F7]" />
+
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#817487]">
+                    Sort by
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    className="h-12 w-full cursor-pointer appearance-none rounded-2xl border border-[#E2D3ED] bg-gradient-to-br from-white to-[#FBF8FF] px-4 pr-11 text-sm font-semibold text-[#4E4155] shadow-[0_5px_15px_rgba(92,45,130,0.05)] outline-none transition-all duration-300 hover:-translate-y-0.5 hover:border-[#C084FC] hover:shadow-[0_10px_22px_rgba(124,58,237,0.10)] focus:border-[#A855F7] focus:ring-4 focus:ring-[#E9D5FF]/60"
+                  >
+                    <option value="newest">Newest</option>
+
+                    <option value="price-low">Price: Low to High</option>
+
+                    <option value="price-high">Price: High to Low</option>
+
+                    <option value="name">Name: A-Z</option>
+                  </select>
+
+                  <div className="pointer-events-none absolute right-3 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg bg-[#F3E8FF] text-[#7C3AED]">
+                    <ChevronDown className="size-3.5" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ================= ACTIVE FILTER ================= */}
+
           {hasFilters && (
-            <div className="flex items-center justify-between border-t border-[#1d1e22] pt-4">
-              <p className="text-sm text-[#686a72]">
-                {filteredTools.length}{" "}
-                {filteredTools.length === 1 ? "tool" : "tools"} found
-              </p>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 flex items-center justify-between rounded-2xl border border-[#E4D5A7] bg-gradient-to-r from-[#FFFBEA] via-white to-[#F7F0FF] px-4 py-3 shadow-[0_8px_25px_rgba(124,58,237,0.06)]"
+            >
+              <div className="flex items-center gap-2">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-[#FFF1B8]">
+                  <Sparkles className="size-3.5 text-[#9A7B16]" />
+                </div>
+
+                <p className="text-sm font-medium text-[#6D6172]">
+                  <span className="font-bold text-[#281832]">
+                    {filteredTools.length}
+                  </span>{" "}
+                  {filteredTools.length === 1 ? "tool" : "tools"} found
+                </p>
+              </div>
 
               <button
                 type="button"
                 onClick={clearFilters}
-                className="text-sm text-[#a5a5ab] transition-colors hover:text-white"
+                className="rounded-xl border border-[#D8C2F0] bg-white px-3.5 py-2 text-xs font-bold text-[#7C3AED] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#A855F7] hover:bg-[#F8F1FF] hover:shadow-md"
               >
                 Clear filters
               </button>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Loading */}
+        {/* ================= LOADING ================= */}
+
         {loading && (
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((item) => (
+          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
               <div
                 key={item}
-                className="overflow-hidden rounded-3xl border border-[#292b30] bg-[#0d0e10]"
+                className="overflow-hidden rounded-[26px] border border-[#E4D5EF] bg-white shadow-[0_10px_30px_rgba(92,45,130,0.07)]"
               >
-                <div className="aspect-4/3 animate-pulse bg-[#151619]" />
+                <div className="aspect-[4/3] animate-pulse bg-gradient-to-br from-[#EDE9FE] via-white to-[#FFF7D6]" />
 
-                <div className="space-y-4 p-5">
-                  <div className="h-3 w-24 animate-pulse rounded bg-[#202126]" />
-                  <div className="h-6 w-40 animate-pulse rounded bg-[#202126]" />
+                <div className="space-y-3 p-5">
+                  <div className="h-3 w-20 animate-pulse rounded-full bg-[#D8C2F0]" />
+
+                  <div className="h-5 w-32 animate-pulse rounded-full bg-[#EDE9FE]" />
 
                   <div className="flex justify-between">
-                    <div className="h-4 w-28 animate-pulse rounded bg-[#202126]" />
-                    <div className="h-4 w-20 animate-pulse rounded bg-[#202126]" />
+                    <div className="h-3 w-24 animate-pulse rounded-full bg-[#EDE9FE]" />
+
+                    <div className="h-3 w-16 animate-pulse rounded-full bg-[#FFF7D6]" />
                   </div>
                 </div>
               </div>
@@ -320,29 +459,45 @@ export default function ToolsPage() {
           </div>
         )}
 
-        {/* Error */}
+        {/* ================= ERROR ================= */}
+
         {!loading && error && (
-          <div className="mt-10 rounded-3xl border border-[#292b30] bg-[#0d0e10] px-6 py-16 text-center">
-            <p className="text-white">Unable to load tools.</p>
-
-            <p className="mt-2 text-sm text-[#686a72]">
-              Please make sure the backend is running and try again.
-            </p>
-          </div>
-        )}
-
-        {/* Empty */}
-        {!loading && !error && filteredTools.length === 0 && (
-          <div className="mt-10 rounded-3xl border border-[#292b30] bg-[#0d0e10] px-6 py-16 text-center">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-[#292b30] bg-[#151619]">
-              <Search className="size-5 text-[#686a72]" />
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative mt-8 overflow-hidden rounded-[28px] border border-[#D8C2F0] bg-gradient-to-br from-[#F3E8FF] via-white to-[#FFF7D6] px-6 py-16 text-center shadow-[0_18px_50px_rgba(124,58,237,0.10)]"
+          >
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-[#D8C2F0] bg-white shadow-md">
+              <X className="size-6 text-[#7C3AED]" />
             </div>
 
-            <h2 className="mt-5 text-lg font-medium text-white">
+            <p className="mt-5 text-lg font-bold text-[#281832]">
+              Unable to load tools.
+            </p>
+
+            <p className="mt-2 text-sm text-[#6d5c76]">
+              Please make sure the backend is running and try again.
+            </p>
+          </motion.div>
+        )}
+
+        {/* ================= EMPTY ================= */}
+
+        {!loading && !error && filteredTools.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative mt-8 overflow-hidden rounded-[28px] border border-[#D8C2F0] bg-gradient-to-br from-[#FFFBEA] via-white to-[#F3E8FF] px-6 py-16 text-center shadow-[0_18px_50px_rgba(124,58,237,0.09)]"
+          >
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-[#D8C2F0] bg-white shadow-md">
+              <Search className="size-6 text-[#7C3AED]" />
+            </div>
+
+            <h2 className="mt-5 text-xl font-bold text-[#281832]">
               No tools found
             </h2>
 
-            <p className="mt-2 text-sm text-[#686a72]">
+            <p className="mt-2 text-sm text-[#6d5c76]">
               Try changing your search or filters.
             </p>
 
@@ -350,28 +505,39 @@ export default function ToolsPage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="mt-5 text-sm font-medium text-white underline underline-offset-4"
+                className="mt-5 rounded-xl bg-gradient-to-r from-[#A855F7] to-[#7C3AED] px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_25px_rgba(124,58,237,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(124,58,237,0.32)]"
               >
                 Clear filters
               </button>
             )}
-          </div>
+          </motion.div>
         )}
 
-        {/* Tools */}
+        {/* ================= TOOLS ================= */}
+
         {!loading && !error && filteredTools.length > 0 && (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {filteredTools.map((tool) => (
-              <motion.div key={tool.id} variants={cardVariants}>
-                <PublicToolCard tool={tool} />
-              </motion.div>
-            ))}
-          </motion.div>
+          <div className="relative mt-9">
+            <div className="pointer-events-none absolute inset-x-10 top-0 h-32 rounded-full bg-[#E9D5FF]/20 blur-3xl" />
+
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="relative grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
+              {filteredTools.map((tool) => (
+                <motion.div
+                  key={tool.id}
+                  variants={cardVariants}
+                  className="group min-w-0 transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="rounded-[26px] transition-all duration-300 group-hover:shadow-[0_22px_55px_rgba(124,58,237,0.13)]">
+                    <PublicToolCard tool={tool} />
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
         )}
       </div>
     </main>

@@ -3,19 +3,37 @@
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import {
-  CalendarDays,
+  ArrowUpRight,
   CheckCircle2,
   Clock3,
-  Loader2,
   Package,
-  XCircle,
+  Sparkles,
+  Activity,
+  Eye,
+  EyeOff,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import RenterProtected from "../../../../components/authForm/RenterProtected";
 import RenterSidebar from "../../../../components/dashboard/renter/RenterSidebar";
 import RenterHeader from "../../../../components/dashboard/renter/RenterHeader";
+import DashboardStats from "../../../../components/dashboard/renter/DashboardStats";
+import RecentOrders, {
+  type RenterOrder,
+} from "../../../../components/dashboard/renter/RecentOrders";
+import QuickActions from "../../../../components/dashboard/renter/QuickActions";
+
 import api from "../../../../lib/axios";
+
+// ================= RENTER =================
+
+interface Renter {
+  renterId: number;
+  fullName: string;
+  email: string;
+  profileImage?: string;
+}
+
+// ================= JWT =================
 
 interface RenterToken {
   sub: number;
@@ -25,120 +43,37 @@ interface RenterToken {
   exp: number;
 }
 
-interface Renter {
-  renterId: number;
-  fullName: string;
-  email: string;
-  phone?: string;
-  profileImage?: string;
-}
+// ================= COMPONENT =================
 
-interface Tool {
-  id: number;
-  name?: string;
-  title?: string;
-  tool_name?: string;
-  image?: string;
-  image_url?: string;
-  rental_price_per_day?: number | string;
-}
-
-interface RenterOrder {
-  order_id: number;
-  renter_id: number;
-
-  tools: Tool[];
-
-  start_date: string;
-  end_date: string;
-
-  duration_days: number;
-  total_amount: number | string;
-
-  status: string;
-  message?: string | null;
-
-  created_at: string;
-  updated_at?: string;
-}
-
-const statusConfig: Record<
-  string,
-  {
-    label: string;
-    className: string;
-    icon: typeof Clock3;
-  }
-> = {
-  pending: {
-    label: "Pending",
-    className: "border-yellow-500/20 bg-yellow-500/10 text-yellow-400",
-    icon: Clock3,
-  },
-
-  approved: {
-    label: "Approved",
-    className: "border-blue-500/20 bg-blue-500/10 text-blue-400",
-    icon: CheckCircle2,
-  },
-
-  active: {
-    label: "Active",
-    className: "border-green-500/20 bg-green-500/10 text-green-400",
-    icon: CheckCircle2,
-  },
-
-  completed: {
-    label: "Completed",
-    className: "border-white/10 bg-white/5 text-[#d4d4d8]",
-    icon: CheckCircle2,
-  },
-
-  rejected: {
-    label: "Rejected",
-    className: "border-red-500/20 bg-red-500/10 text-red-400",
-    icon: XCircle,
-  },
-};
-
-function formatDate(date?: string) {
-  if (!date) return "-";
-
-  return new Date(date).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function getStatusConfig(status?: string) {
-  const normalizedStatus = status?.toLowerCase() ?? "pending";
-
-  return (
-    statusConfig[normalizedStatus] ?? {
-      label: status || "Unknown",
-      className: "border-white/10 bg-white/5 text-[#d4d4d8]",
-      icon: Clock3,
-    }
-  );
-}
-
-function getToolName(tool: Tool) {
-  return tool.name || tool.title || tool.tool_name || `Tool #${tool.id}`;
-}
-
-export default function RenterOrdersPage() {
-  const [orders, setOrders] = useState<RenterOrder[]>([]);
+export default function RenterDashboard() {
   const [renter, setRenter] = useState<Renter | null>(null);
-
+  const [orders, setOrders] = useState<RenterOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
+
+  // ================= RECENT ORDERS VISIBILITY =================
+
+  const [showRecentOrders, setShowRecentOrders] = useState(true);
+
+  // ================= LOAD DASHBOARD DATA =================
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    // Load saved Recent Orders visibility
+
+    const savedVisibility = localStorage.getItem(
+      "renter_recent_orders_visible",
+    );
+
+    if (savedVisibility === "false") {
+      setShowRecentOrders(false);
+    }
+
+    const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        setError(false);
+        setError("");
+
+        // ================= TOKEN =================
 
         const token = localStorage.getItem("access_token");
 
@@ -146,252 +81,402 @@ export default function RenterOrdersPage() {
           return;
         }
 
+        // ================= DECODE TOKEN =================
+
         const decoded = jwtDecode<RenterToken>(token);
+
         const renterId = decoded.sub;
-        const profileResponse = await api.get<Renter>(`/renter/${renterId}`);
-        setRenter(profileResponse.data);
-        const ordersResponse = await api.get<RenterOrder[]>("/renter/orders");
+
+        // ================= GET RENTER PROFILE =================
+
+        const renterResponse = await api.get(`/renter/${renterId}`);
+
+        // ================= GET RENTER ORDERS =================
+
+        const ordersResponse = await api.get("/renter/orders");
+
+        setRenter(renterResponse.data);
         setOrders(ordersResponse.data ?? []);
-      } catch (error) {
-        console.error("Failed to load orders:", error);
-        setError(true);
-        toast.error("Failed to load orders");
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+
+        setError("Failed to load dashboard data.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOrders();
+    fetchDashboardData();
   }, []);
+
+  // ================= ORDER COUNTS =================
+
+  const pendingOrders = orders.filter(
+    (order) => order.status === "pending",
+  ).length;
+
+  const activeOrders = orders.filter(
+    (order) => order.status === "active",
+  ).length;
+
+  const completedOrders = orders.filter(
+    (order) => order.status === "completed",
+  ).length;
+
+  // ================= HIDE / SHOW FUNCTION =================
+
+  const toggleRecentOrders = () => {
+    const newValue = !showRecentOrders;
+
+    setShowRecentOrders(newValue);
+
+    localStorage.setItem("renter_recent_orders_visible", String(newValue));
+  };
+
+  // ================= RETURN =================
 
   return (
     <RenterProtected>
-      <div className="min-h-screen bg-[#090a0c] text-white">
+      <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">
+        {/* ================================================= */}
+        {/* ================= SIDEBAR ======================= */}
+        {/* ================================================= */}
+
         <RenterSidebar />
 
-        <div className="lg:pl-64">
+        {/* ================================================= */}
+        {/* ================= MAIN AREA ===================== */}
+        {/* ================================================= */}
+
+        <div className="pt-[72px] lg:ml-[280px] lg:pt-0">
+          {/* ================================================= */}
+          {/* ================= HEADER ======================== */}
+          {/* ================================================= */}
+
           <RenterHeader renter={renter} />
 
-          <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                My Orders
-              </h1>
+          {/* ================================================= */}
+          {/* ================= PAGE CONTENT ================== */}
+          {/* ================================================= */}
 
-              <p className="mt-2 text-sm text-[#9ca3af]">
-                View and track all your rental orders.
-              </p>
-            </div>
+          <main className="px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+            <div className="mx-auto max-w-[1280px]">
+              {/* ================================================= */}
+              {/* ================= HERO ========================== */}
+              {/* ================================================= */}
 
-            {/* Loading */}
-            {loading && (
-              <div className="flex min-h-80 items-center justify-center rounded-2xl border border-[#292b30] bg-[#0d0e10]">
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-7 w-7 animate-spin text-[#9ca3af]" />
+              <section className="relative mb-6 overflow-hidden rounded-[24px] bg-[#292722] shadow-[0_12px_32px_rgba(41,39,34,0.12)]">
+                {/* Decorative Shapes */}
 
-                  <p className="text-sm text-[#71717a]">
-                    Loading your orders...
+                <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[#c1502e]/15" />
+
+                <div className="pointer-events-none absolute -bottom-20 right-28 h-40 w-40 rounded-full bg-[#e4a15b]/8" />
+
+                <div className="pointer-events-none absolute left-[55%] top-8 h-20 w-20 rounded-full bg-white/[0.025]" />
+
+                <div className="pointer-events-none absolute bottom-6 left-[62%] hidden h-12 w-12 rounded-full border border-white/[0.05] sm:block" />
+
+                {/* HERO CONTENT */}
+
+                <div className="relative px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
+                  {/* LABEL */}
+
+                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1.5">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#c1502e]">
+                      <Sparkles className="h-2.5 w-2.5 text-white" />
+                    </span>
+
+                    <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/65">
+                      Renter Workspace
+                    </span>
+                  </div>
+
+                  {/* HEADING */}
+
+                  <h1 className="max-w-3xl text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-[36px]">
+                    Welcome back
+                    {renter?.fullName ? `, ${renter.fullName}` : ""}
+                  </h1>
+
+                  {/* DESCRIPTION */}
+
+                  <p className="mt-2 max-w-xl text-xs leading-5 text-white/50 sm:text-sm">
+                    Find the tools you need, manage your rentals and keep track
+                    of your orders from one place.
                   </p>
                 </div>
-              </div>
-            )}
+              </section>
 
-            {/* Error */}
-            {!loading && error && (
-              <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-[#292b30] bg-[#0d0e10] px-6 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10">
-                  <XCircle className="h-7 w-7 text-red-400" />
+              {/* ================================================= */}
+              {/* ================= LOADING ======================== */}
+              {/* ================================================= */}
+
+              {loading && (
+                <div className="space-y-5">
+                  {/* STATISTICS SKELETON */}
+
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="h-[120px] animate-pulse rounded-[18px] bg-white"
+                      />
+                    ))}
+                  </div>
+
+                  {/* RECENT ORDERS SKELETON */}
+
+                  <div className="h-[350px] animate-pulse rounded-[22px] bg-white" />
                 </div>
+              )}
 
-                <h2 className="mt-4 text-lg font-semibold">
-                  Unable to load orders
-                </h2>
+              {/* ================================================= */}
+              {/* ================= ERROR ========================= */}
+              {/* ================================================= */}
 
-                <p className="mt-2 max-w-md text-sm text-[#71717a]">
-                  Something went wrong while loading your rental orders.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="mt-5 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-[#e4e4e7]"
-                >
-                  Try Again
-                </button>
-              </div>
-            )}
-
-            {/* Empty */}
-            {!loading && !error && orders.length === 0 && (
-              <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-[#292b30] bg-[#0d0e10] px-6 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5">
-                  <Package className="h-8 w-8 text-[#71717a]" />
+              {!loading && error && (
+                <div className="rounded-[18px] border border-[#f2c6c2] bg-[#fff5f3] px-4 py-3 text-sm font-medium text-[#c1502e]">
+                  {error}
                 </div>
+              )}
 
-                <h2 className="mt-5 text-lg font-semibold">
-                  No rental orders yet
-                </h2>
+              {/* ================================================= */}
+              {/* ================= DASHBOARD ===================== */}
+              {/* ================================================= */}
 
-                <p className="mt-2 max-w-md text-sm text-[#71717a]">
-                  You haven't requested any tools yet. Explore available tools
-                  and place your first rental order.
-                </p>
+              {!loading && !error && (
+                <>
+                  {/* ================================================= */}
+                  {/* ================= STATISTICS ==================== */}
+                  {/* ================================================= */}
 
-                <a
-                  href="/tools"
-                  className="mt-5 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-[#e4e4e7]"
-                >
-                  Explore Tools
-                </a>
-              </div>
-            )}
+                  <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {/* ================= TOTAL ORDERS ================= */}
 
-            {/* Orders */}
-            {!loading && !error && orders.length > 0 && (
-              <div className="space-y-5">
-                {orders.map((order) => {
-                  const status = getStatusConfig(order.status);
-                  const StatusIcon = status.icon;
+                    <div className="group relative overflow-hidden rounded-[18px] bg-white p-4 shadow-[0_6px_22px_rgba(55,45,30,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(55,45,30,0.08)]">
+                      <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[#e8a33d]/10 transition-transform duration-500 group-hover:scale-125" />
 
-                  return (
-                    <article
-                      key={order.order_id}
-                      className="rounded-2xl border border-[#292b30] bg-[#0d0e10] p-5 sm:p-6"
-                    >
-                      {/* Order top */}
-                      <div className="flex flex-col gap-4 border-b border-[#292b30] pb-5 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="relative flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-[#52525b]">Order ID</p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aaa39a]">
+                            Total Orders
+                          </p>
 
-                          <h2 className="mt-1 text-lg font-semibold">
-                            #{order.order_id}
+                          <p className="mt-2 text-2xl font-extrabold tracking-tight text-[#211f1c]">
+                            {orders.length}
+                          </p>
+                        </div>
+
+                        <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#fff3dd] text-[#c17a28]">
+                          <Package className="h-4 w-4" />
+                        </div>
+                      </div>
+
+                      <p className="relative mt-3 text-[11px] font-medium text-[#8c837a]">
+                        All your rental orders
+                      </p>
+                    </div>
+
+                    {/* ================= PENDING ================= */}
+
+                    <div className="group relative overflow-hidden rounded-[18px] bg-white p-4 shadow-[0_6px_22px_rgba(55,45,30,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(55,45,30,0.08)]">
+                      <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[#f59e0b]/8 transition-transform duration-500 group-hover:scale-125" />
+
+                      <div className="relative flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aaa39a]">
+                            Pending
+                          </p>
+
+                          <p className="mt-2 text-2xl font-extrabold tracking-tight text-[#b7791f]">
+                            {pendingOrders}
+                          </p>
+                        </div>
+
+                        <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#fff8e8] text-[#c48625]">
+                          <Clock3 className="h-4 w-4" />
+                        </div>
+                      </div>
+
+                      <p className="relative mt-3 text-[11px] font-medium text-[#8c837a]">
+                        Waiting for approval
+                      </p>
+                    </div>
+
+                    {/* ================= ACTIVE ================= */}
+
+                    <div className="group relative overflow-hidden rounded-[18px] bg-white p-4 shadow-[0_6px_22px_rgba(55,45,30,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(55,45,30,0.08)]">
+                      <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[#22c55e]/8 transition-transform duration-500 group-hover:scale-125" />
+
+                      <div className="relative flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aaa39a]">
+                            Active
+                          </p>
+
+                          <p className="mt-2 text-2xl font-extrabold tracking-tight text-[#16803c]">
+                            {activeOrders}
+                          </p>
+                        </div>
+
+                        <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#edf9f0] text-[#16803c]">
+                          <Activity className="h-4 w-4" />
+                        </div>
+                      </div>
+
+                      <p className="relative mt-3 text-[11px] font-medium text-[#8c837a]">
+                        Currently rented
+                      </p>
+                    </div>
+
+                    {/* ================= COMPLETED ================= */}
+
+                    <div className="group relative overflow-hidden rounded-[18px] bg-white p-4 shadow-[0_6px_22px_rgba(55,45,30,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(55,45,30,0.08)]">
+                      <div className="absolute -right-7 -top-7 h-20 w-20 rounded-full bg-[#c1502e]/7 transition-transform duration-500 group-hover:scale-125" />
+
+                      <div className="relative flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aaa39a]">
+                            Completed
+                          </p>
+
+                          <p className="mt-2 text-2xl font-extrabold tracking-tight text-[#c1502e]">
+                            {completedOrders}
+                          </p>
+                        </div>
+
+                        <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#fff1ef] text-[#c1502e]">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
+                      </div>
+
+                      <p className="relative mt-3 text-[11px] font-medium text-[#8c837a]">
+                        Successfully completed
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* ================================================= */}
+                  {/* ================= RECENT ORDERS ================= */}
+                  {/* ================================================= */}
+
+                  <section className="mt-5 overflow-hidden rounded-[22px] bg-white shadow-[0_8px_28px_rgba(55,45,30,0.055)]">
+                    {/* ================= HEADER ================= */}
+
+                    <div className="flex flex-col gap-3 border-b border-[#eee8e1] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#fff3dd] text-[#c17a28]">
+                            <Package className="h-3.5 w-3.5" />
+                          </div>
+
+                          <h2 className="text-base font-bold text-[#211f1c]">
+                            Recent Orders
                           </h2>
                         </div>
 
-                        <span
-                          className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${status.className}`}
-                        >
-                          <StatusIcon className="h-3.5 w-3.5" />
-                          {status.label}
-                        </span>
-                      </div>
-
-                      {/* Tools */}
-                      <div className="mt-5">
-                        <p className="mb-3 text-sm font-medium text-[#d4d4d8]">
-                          Requested Tools
+                        <p className="mt-1.5 text-xs text-[#8c837a]">
+                          Your latest rental orders and their current status.
                         </p>
-
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          {order.tools?.map((tool) => (
-                            <div
-                              key={tool.id}
-                              className="flex items-center gap-3 rounded-xl border border-[#292b30] bg-[#090a0c] p-3"
-                            >
-                              {tool.image || tool.image_url ? (
-                                <img
-                                  src={tool.image || tool.image_url}
-                                  alt={getToolName(tool)}
-                                  className="h-12 w-12 rounded-lg object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/5">
-                                  <Package className="h-5 w-5 text-[#71717a]" />
-                                </div>
-                              )}
-
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-white">
-                                  {getToolName(tool)}
-                                </p>
-
-                                <p className="mt-0.5 text-xs text-[#52525b]">
-                                  Tool #{tool.id}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
                       </div>
 
-                      {/* Order details */}
-                      <div className="mt-5 grid gap-4 border-t border-[#292b30] pt-5 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5">
-                            <CalendarDays className="h-4 w-4 text-[#9ca3af]" />
+                      {/* ================= ACTIONS ================= */}
+
+                      <div className="flex items-center gap-2">
+                        {/* HIDE / SHOW */}
+
+                        <button
+                          type="button"
+                          onClick={toggleRecentOrders}
+                          className="group inline-flex items-center gap-1.5 rounded-lg border border-[#e8e2da] bg-[#faf9f7] px-3 py-1.5 text-xs font-bold text-[#756f66] transition-all duration-200 hover:border-[#d8d0c6] hover:bg-[#f4f1ec]"
+                        >
+                          {showRecentOrders ? (
+                            <>
+                              <EyeOff className="h-3.5 w-3.5" />
+                              Hide
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="h-3.5 w-3.5" />
+                              Show
+                            </>
+                          )}
+                        </button>
+
+                        {/* VIEW ALL */}
+
+                        <a
+                          href="/renter/orders"
+                          className="group inline-flex w-fit items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#a96618] transition-all duration-200 hover:bg-[#fff5e6]"
+                        >
+                          View all
+                          <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* ================================================= */}
+                    {/* ================= ORDERS CONTENT ================= */}
+                    {/* ================================================= */}
+
+                    {showRecentOrders ? (
+                      <div className="p-3.5 sm:p-4">
+                        <RecentOrders orders={orders} />
+                      </div>
+                    ) : (
+                      /* ================= HIDDEN STATE ================= */
+
+                      <div className="flex min-h-[150px] items-center justify-center px-5 py-8">
+                        <div className="text-center">
+                          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#f4f1ec] text-[#8c837a]">
+                            <EyeOff className="h-4 w-4" />
                           </div>
 
-                          <div>
-                            <p className="text-xs text-[#52525b]">Start Date</p>
-
-                            <p className="mt-0.5 text-sm text-[#d4d4d8]">
-                              {formatDate(order.start_date)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5">
-                            <CalendarDays className="h-4 w-4 text-[#9ca3af]" />
-                          </div>
-
-                          <div>
-                            <p className="text-xs text-[#52525b]">End Date</p>
-
-                            <p className="mt-0.5 text-sm text-[#d4d4d8]">
-                              {formatDate(order.end_date)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5">
-                            <Clock3 className="h-4 w-4 text-[#9ca3af]" />
-                          </div>
-
-                          <div>
-                            <p className="text-xs text-[#52525b]">Duration</p>
-
-                            <p className="mt-0.5 text-sm text-[#d4d4d8]">
-                              {order.duration_days}{" "}
-                              {order.duration_days === 1 ? "day" : "days"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-[#52525b]">Total Amount</p>
-
-                          <p className="mt-0.5 text-lg font-semibold text-white">
-                            ৳
-                            {Number(order.total_amount).toLocaleString("en-BD")}
+                          <p className="mt-3 text-sm font-semibold text-[#555047]">
+                            Recent orders are hidden
                           </p>
+
+                          <p className="mt-1 text-xs text-[#9a948b]">
+                            Click Show to display your recent orders.
+                          </p>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowRecentOrders(true);
+
+                              localStorage.setItem(
+                                "renter_recent_orders_visible",
+                                "true",
+                              );
+                            }}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#292722] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#3a3731]"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Show Orders
+                          </button>
                         </div>
                       </div>
+                    )}
+                  </section>
 
-                      {/* Message */}
-                      {order.message && (
-                        <div className="mt-5 rounded-xl border border-[#292b30] bg-[#090a0c] p-4">
-                          <p className="text-xs font-medium text-[#71717a]">
-                            Message
-                          </p>
+                  {/* ================================================= */}
+                  {/* ================= BOTTOM NOTE =================== */}
+                  {/* ================================================= */}
 
-                          <p className="mt-1 text-sm leading-6 text-[#d4d4d8]">
-                            {order.message}
-                          </p>
-                        </div>
-                      )}
+                  <div className="mt-5 flex items-center justify-center gap-2">
+                    <div className="h-1 w-1 rounded-full bg-[#c1502e]" />
 
-                      {/* Created date */}
-                      <p className="mt-5 text-xs text-[#52525b]">
-                        Ordered on {formatDate(order.created_at)}
-                      </p>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
+                    <p className="text-center text-[10px] text-[#9a948b]">
+                      Your dashboard shows your rental orders and account
+                      activity.
+                    </p>
+
+                    <div className="h-1 w-1 rounded-full bg-[#c1502e]" />
+                  </div>
+                </>
+              )}
+            </div>
           </main>
         </div>
       </div>

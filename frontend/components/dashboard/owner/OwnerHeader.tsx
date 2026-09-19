@@ -82,7 +82,7 @@ export default function OwnerHeader({ owner }: OwnerHeaderProps) {
         lg:px-8
       "
     >
-      {/* ================= LEFT SIDE ================= */}
+      {/* LEFT SIDE  */}
 
       <div className="min-w-0">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c1502e]">
@@ -98,15 +98,15 @@ export default function OwnerHeader({ owner }: OwnerHeaderProps) {
         </p>
       </div>
 
-      {/* ================= RIGHT SIDE ================= */}
+      {/* RIGHT SIDE */}
 
       <div className="ml-4 flex items-center gap-3 sm:gap-5">
 
-        {/* ================= PROFILE ================= */}
+        {/* PROFILE  */}
 
         <div className="flex items-center gap-3 rounded-2xl bg-white/70 px-3 py-2 shadow-sm sm:px-3.5">
 
-          {/* ================= PROFILE IMAGE ================= */}
+          {/* PROFILE IMAGE  */}
 
           <div className="relative shrink-0">
 
@@ -125,12 +125,12 @@ export default function OwnerHeader({ owner }: OwnerHeaderProps) {
               </div>
             )}
 
-            {/* ================= ONLINE DOT ================= */}
+            {/* ONLINE DOT  */}
 
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#4f7a52] shadow-[0_0_0_2px_#ffffff]" />
           </div>
 
-          {/* ================= OWNER INFO ================= */}
+          {/* OWNER INFO  */}
 
           <div className="hidden min-w-0 sm:block">
 
