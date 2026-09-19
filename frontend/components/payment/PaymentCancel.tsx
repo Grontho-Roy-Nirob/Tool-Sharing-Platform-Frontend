@@ -51,7 +51,7 @@ export default function PaymentCancel() {
     checkPaymentStatus();
   }, []);
 
-  // ================= LOADING =================
+  // LOADING 
 
   if (loading) {
     return (
@@ -67,8 +67,7 @@ export default function PaymentCancel() {
     );
   }
 
-  // ================= PAYMENT SUCCESS =================
-
+  // PAYMENT SUCCESS 
   if (paymentStatus === "paid") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f3ef] px-4 py-10">
@@ -97,7 +96,7 @@ export default function PaymentCancel() {
     );
   }
 
-  // ================= CANCELLED =================
+  // CANCELLED 
 
   return (
     <div className="min-h-screen bg-[#f5f3ef] px-4 py-10 sm:px-6 lg:px-8">

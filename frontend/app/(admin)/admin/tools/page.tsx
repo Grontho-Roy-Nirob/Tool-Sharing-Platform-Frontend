@@ -16,10 +16,8 @@ export default function AdminToolsPage() {
 
           <main className="px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
             <div className="mx-auto max-w-[1280px]">
-              {/* ================================================= */}
+   
               {/* HERO HEADER */}
-              {/* ================================================= */}
-
               <section className="relative mb-5 overflow-hidden rounded-[22px] bg-[#292722] shadow-[0_12px_32px_rgba(41,39,34,0.12)]">
                 {/* Decorative shapes */}
 
@@ -51,7 +49,6 @@ export default function AdminToolsPage() {
                   </h1>
 
                   {/* Description */}
-
                   <p className="mt-2 max-w-xl text-xs leading-5 text-white/50 sm:text-sm">
                     Review tools submitted by owners and manage their approval
                     status across the ToolShare platform.
@@ -59,10 +56,8 @@ export default function AdminToolsPage() {
                 </div>
               </section>
 
-              {/* ================================================= */}
-              {/* TOOLS TABLE */}
-              {/* ================================================= */}
 
+              {/* TOOLS TABLE */}
               <section className="overflow-hidden rounded-[22px] bg-white shadow-[0_8px_28px_rgba(55,45,30,0.055)]">
                 {/* Table Header */}
 
@@ -79,16 +74,13 @@ export default function AdminToolsPage() {
                 </div>
 
                 {/* Table */}
-
                 <div className="p-3.5 sm:p-4">
                   <AdminToolsTable />
                 </div>
               </section>
 
-              {/* ================================================= */}
-              {/* FOOTER NOTE */}
-              {/* ================================================= */}
 
+              {/* FOOTER NOTE */}
               <div className="mt-5 flex items-center justify-center gap-2">
                 <div className="h-1 w-1 rounded-full bg-[#c1502e]" />
 

@@ -35,9 +35,7 @@ const FeaturedTools = () => {
       id="tools"
       className="mx-auto max-w-[1200px] px-4 py-24 sm:px-8 sm:py-28"
     >
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
+      {/* HEADER */}
 
       <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
         <div className="max-w-2xl">

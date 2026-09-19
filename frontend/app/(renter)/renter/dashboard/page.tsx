@@ -24,7 +24,6 @@ import QuickActions from "../../../../components/dashboard/renter/QuickActions";
 import api from "../../../../lib/axios";
 
 // RENTER
-
 interface Renter {
   renterId: number;
   fullName: string;
@@ -33,7 +32,6 @@ interface Renter {
 }
 
 // JWT
-
 interface RenterToken {
   sub: number;
   email: string;
@@ -43,7 +41,6 @@ interface RenterToken {
 }
 
 // COMPONENT
-
 export default function RenterDashboard() {
   const [renter, setRenter] = useState<Renter | null>(null);
   const [orders, setOrders] = useState<RenterOrder[]>([]);
@@ -51,11 +48,9 @@ export default function RenterDashboard() {
   const [error, setError] = useState("");
 
   // RECENT ORDERS VISIBILITY
-
   const [showRecentOrders, setShowRecentOrders] = useState(true);
 
   // LOAD DASHBOARD DATA
-
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -93,7 +88,6 @@ export default function RenterDashboard() {
   }, []);
 
   // ORDER COUNTS
-
   const pendingOrders = orders.filter(
     (order) => order.status === "pending",
   ).length;
@@ -107,11 +101,9 @@ export default function RenterDashboard() {
   ).length;
 
   // LATEST 5 ORDERS
-
   const latestOrders = orders.slice(0, 5);
 
   // RETURN
-
   return (
     <RenterProtected>
       <div className="min-h-screen bg-[#f5f3ef] text-[#25231f]">

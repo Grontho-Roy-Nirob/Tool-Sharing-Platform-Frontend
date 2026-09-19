@@ -66,11 +66,9 @@ export default function OwnerToolsPage() {
         }
 
         // GET ALL OWNERS 
-
         const response = await api.get<Owner[]>("/owner/listall");
 
         //  FIND CURRENT OWNER 
-
         const currentOwner = response.data.find(
           (item) =>
             item.email?.trim().toLowerCase() === email.trim().toLowerCase(),
