@@ -59,7 +59,6 @@ export interface RenterOrder {
 interface RecentOrdersProps {
   orders: RenterOrder[];
 
-  // Optional callback
   onPaymentStatusChange?: (
     orderId: number,
     paymentStatus: PaymentStatus,
@@ -174,6 +173,16 @@ export default function RecentOrders({
 
   // ======================================================
   // LOCAL PAYMENT STATUS
+  //
+  // IMPORTANT:
+  // Each order has its own payment status.
+  //
+  // Example:
+  // {
+  //   1: "paid",
+  //   2: "paid",
+  //   3: "unpaid"
+  // }
   // ======================================================
 
   const [paymentStatuses, setPaymentStatuses] = useState<
@@ -202,16 +211,58 @@ export default function RecentOrders({
 
   // ======================================================
   // INITIALIZE PAYMENT STATUS
+  //
+  // IMPORTANT FIX:
+  //
+  // Do NOT recreate the whole paymentStatuses object
+  // every time orders change.
+  //
+  // Otherwise:
+  //
+  // Order #1 = PAID
+  // Order #2 = PAID
+  //
+  // refresh হলে Order #1 আবার UNPAID হয়ে যেতে পারে.
+  //
+  // এখানে আগের PAID/CANCELLED status preserve করা হচ্ছে.
   // ======================================================
 
   useEffect(() => {
-    const initialStatuses: Record<number, PaymentStatus> = {};
+    setPaymentStatuses((currentStatuses) => {
+      const updatedStatuses: Record<number, PaymentStatus> = {
+        ...currentStatuses,
+      };
 
-    orders.forEach((order) => {
-      initialStatuses[order.id] = order.payment_status || "unpaid";
+      orders.forEach((order) => {
+        const existingStatus = currentStatuses[order.id];
+
+        // ================================================
+        // NEVER CHANGE PAID
+        // ================================================
+
+        if (existingStatus === "paid") {
+          updatedStatuses[order.id] = "paid";
+          return;
+        }
+
+        // ================================================
+        // NEVER CHANGE CANCELLED
+        // ================================================
+
+        if (existingStatus === "cancelled") {
+          updatedStatuses[order.id] = "cancelled";
+          return;
+        }
+
+        // ================================================
+        // NEW ORDER
+        // ================================================
+
+        updatedStatuses[order.id] = order.payment_status || "unpaid";
+      });
+
+      return updatedStatuses;
     });
-
-    setPaymentStatuses(initialStatuses);
   }, [orders]);
 
   // ======================================================
@@ -250,10 +301,37 @@ export default function RecentOrders({
         data?.payment_status === "cancelled" ||
         data?.payment_status === "unpaid"
       ) {
-        setPaymentStatuses((current) => ({
-          ...current,
-          [orderId]: data.payment_status,
-        }));
+        setPaymentStatuses((currentStatuses) => {
+          const existingStatus = currentStatuses[orderId];
+
+          // ==============================================
+          // IMPORTANT:
+          //
+          // If this specific order is already PAID,
+          // don't allow it to become UNPAID.
+          // ==============================================
+
+          if (existingStatus === "paid" && data.payment_status !== "paid") {
+            return currentStatuses;
+          }
+
+          // ==============================================
+          // If this specific order is CANCELLED,
+          // don't allow it to become UNPAID.
+          // ==============================================
+
+          if (
+            existingStatus === "cancelled" &&
+            data.payment_status === "unpaid"
+          ) {
+            return currentStatuses;
+          }
+
+          return {
+            ...currentStatuses,
+            [orderId]: data.payment_status,
+          };
+        });
 
         onPaymentStatusChange?.(orderId, data.payment_status);
       }
@@ -283,6 +361,7 @@ export default function RecentOrders({
     }
 
     let attempts = 0;
+
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const checkStatus = async () => {
@@ -372,7 +451,7 @@ export default function RecentOrders({
 
       const token = localStorage.getItem("access_token");
 
-      // Save order ID
+      // Save CURRENT order ID only
       localStorage.setItem("payment_order_id", String(orderId));
 
       const response = await fetch(
@@ -539,6 +618,16 @@ export default function RecentOrders({
           {recentOrders.map((order) => {
             // ==================================================
             // CURRENT PAYMENT STATUS
+            //
+            // VERY IMPORTANT:
+            //
+            // order.id is used as the key.
+            //
+            // So:
+            //
+            // Order #1 → paymentStatuses[1]
+            // Order #2 → paymentStatuses[2]
+            // Order #3 → paymentStatuses[3]
             // ==================================================
 
             const currentPaymentStatus =
@@ -570,7 +659,6 @@ export default function RecentOrders({
                           Order #{order.id}
                         </h3>
 
-                        {/* ONLY ORDER STATUS */}
                         <StatusBadge status={order.status} />
                       </div>
 
@@ -650,16 +738,16 @@ export default function RecentOrders({
                         <div
                           key={tool.id}
                           className="
-                              flex items-center gap-3
-                              rounded-xl
-                              border border-[#e8caca]
-                              bg-[#fffafa]
-                              p-3
-                              shadow-sm
-                              transition-all duration-300
-                              hover:border-[#dba8a8]
-                              hover:bg-[#fff5f5]
-                            "
+                            flex items-center gap-3
+                            rounded-xl
+                            border border-[#e8caca]
+                            bg-[#fffafa]
+                            p-3
+                            shadow-sm
+                            transition-all duration-300
+                            hover:border-[#dba8a8]
+                            hover:bg-[#fff5f5]
+                          "
                         >
                           {/* TOOL IMAGE */}
 
