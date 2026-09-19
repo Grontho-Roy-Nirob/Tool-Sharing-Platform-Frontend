@@ -8,6 +8,7 @@ import {
   CreditCard,
   Eye,
   EyeOff,
+  Loader2,
   MapPin,
   Package,
 } from "lucide-react";
@@ -19,6 +20,8 @@ export type OrderStatus =
   | "rejected"
   | "active"
   | "completed";
+
+export type PaymentStatus = "unpaid" | "paid" | "cancelled";
 
 export interface OrderTool {
   id: number;
@@ -43,6 +46,11 @@ export interface RenterOrder {
   duration_days: number;
   total_amount: number;
   status: OrderStatus;
+
+  // ================= PAYMENT STATUS =================
+
+  payment_status: PaymentStatus;
+
   message: string | null;
   created_at: string;
   updated_at: string;
@@ -50,6 +58,18 @@ export interface RenterOrder {
 
 interface RecentOrdersProps {
   orders: RenterOrder[];
+
+  // Optional callback.
+  // Parent component can use this to reload orders
+  // after payment status changes.
+  onPaymentStatusChange?: (
+    orderId: number,
+    paymentStatus: PaymentStatus,
+  ) => void;
+}
+
+interface PaymentStatusResponse {
+  payment_status: PaymentStatus;
 }
 
 const statusStyles: Record<OrderStatus, string> = {
@@ -74,6 +94,28 @@ function StatusBadge({ status }: { status: OrderStatus }) {
       className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${statusStyles[status]}`}
     >
       {status}
+    </span>
+  );
+}
+
+function PaymentBadge({ status }: { status: PaymentStatus }) {
+  const styles: Record<PaymentStatus, string> = {
+    unpaid: "bg-[#fff1d6] text-[#8a5a00]",
+    paid: "bg-[#e4f3e7] text-[#2f6b3a]",
+    cancelled: "bg-[#f8dddd] text-[#A82020]",
+  };
+
+  const labels: Record<PaymentStatus, string> = {
+    unpaid: "UNPAID",
+    paid: "PAID",
+    cancelled: "CANCELLED",
+  };
+
+  return (
+    <span
+      className={`rounded-full px-3 py-1 text-xs font-medium ${styles[status]}`}
+    >
+      {labels[status]}
     </span>
   );
 }
@@ -112,24 +154,173 @@ function getToolImage(image: string) {
   return `${process.env.NEXT_PUBLIC_API_URL}/uploads/${image}`;
 }
 
-export default function RecentOrders({ orders }: RecentOrdersProps) {
+export default function RecentOrders({
+  orders,
+  onPaymentStatusChange,
+}: RecentOrdersProps) {
   const [hiddenOrderIds, setHiddenOrderIds] = useState<number[]>([]);
+
   const [activeTab, setActiveTab] = useState<"visible" | "hidden">("visible");
+
+  // ================= PAYMENT LOADING =================
+
+  const [paymentLoadingId, setPaymentLoadingId] = useState<number | null>(null);
+
+  // ================= LOCAL PAYMENT STATUS =================
+
+  const [paymentStatuses, setPaymentStatuses] = useState<
+    Record<number, PaymentStatus>
+  >({});
+
+  // ======================================================
+  // LOAD HIDDEN ORDERS
+  // ======================================================
 
   useEffect(() => {
     const savedHiddenOrders = localStorage.getItem("renter_hidden_orders");
 
     if (savedHiddenOrders) {
       try {
-        setHiddenOrderIds(JSON.parse(savedHiddenOrders));
+        const parsed = JSON.parse(savedHiddenOrders);
+
+        if (Array.isArray(parsed)) {
+          setHiddenOrderIds(parsed);
+        }
       } catch {
         setHiddenOrderIds([]);
       }
     }
   }, []);
 
+  // ======================================================
+  // INITIALIZE PAYMENT STATUS
+  // ======================================================
+
+  useEffect(() => {
+    const initialStatuses: Record<number, PaymentStatus> = {};
+
+    orders.forEach((order) => {
+      initialStatuses[order.id] = order.payment_status || "unpaid";
+    });
+
+    setPaymentStatuses(initialStatuses);
+  }, [orders]);
+
+  // ======================================================
+  // CHECK PAYMENT STATUS
+  // ======================================================
+
+  const checkPaymentStatus = async (orderId: number) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/payment/status/${orderId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data: PaymentStatusResponse = await response.json();
+
+      if (
+        data?.payment_status === "paid" ||
+        data?.payment_status === "cancelled" ||
+        data?.payment_status === "unpaid"
+      ) {
+        setPaymentStatuses((current) => ({
+          ...current,
+          [orderId]: data.payment_status,
+        }));
+
+        onPaymentStatusChange?.(orderId, data.payment_status);
+      }
+    } catch (error) {
+      console.error(
+        `Failed to check payment status for order ${orderId}:`,
+        error,
+      );
+    }
+  };
+
+  // ======================================================
+  // CHECK PAYMENT STATUS AFTER RETURNING FROM STRIPE
+  // ======================================================
+
+  useEffect(() => {
+    const paymentOrderId = localStorage.getItem("payment_order_id");
+
+    if (!paymentOrderId) {
+      return;
+    }
+
+    const orderId = Number(paymentOrderId);
+
+    if (!orderId) {
+      return;
+    }
+
+    let attempts = 0;
+
+    const checkStatus = async () => {
+      attempts++;
+
+      await checkPaymentStatus(orderId);
+
+      // Stripe webhook may take a little time.
+      // Check several times after returning from Stripe.
+      if (attempts < 15) {
+        setTimeout(checkStatus, 2000);
+      }
+    };
+
+    checkStatus();
+
+    return () => {
+      // Nothing else is required here.
+    };
+  }, []);
+
+  // ======================================================
+  // CHECK UNPAID ORDERS PERIODICALLY
+  // ======================================================
+
+  useEffect(() => {
+    const approvedUnpaidOrders = orders.filter((order) => {
+      const currentStatus =
+        paymentStatuses[order.id] || order.payment_status || "unpaid";
+
+      return order.status === "approved" && currentStatus === "unpaid";
+    });
+
+    if (approvedUnpaidOrders.length === 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      approvedUnpaidOrders.forEach((order) => {
+        checkPaymentStatus(order.id);
+      });
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [orders, paymentStatuses]);
+
+  // ======================================================
+  // HIDE ORDER
+  // ======================================================
+
   const hideOrder = (orderId: number) => {
-    const updatedIds = [...hiddenOrderIds, orderId];
+    const updatedIds = hiddenOrderIds.includes(orderId)
+      ? hiddenOrderIds
+      : [...hiddenOrderIds, orderId];
 
     setHiddenOrderIds(updatedIds);
 
@@ -137,6 +328,10 @@ export default function RecentOrders({ orders }: RecentOrdersProps) {
 
     toast.success("Order hidden successfully");
   };
+
+  // ======================================================
+  // SHOW ORDER
+  // ======================================================
 
   const showOrder = (orderId: number) => {
     const updatedIds = hiddenOrderIds.filter((id) => id !== orderId);
@@ -148,24 +343,35 @@ export default function RecentOrders({ orders }: RecentOrdersProps) {
     toast.success("Order is visible again");
   };
 
-  // ================= STRIPE PAYMENT =================
+  // ======================================================
+  // STRIPE PAYMENT
+  // ======================================================
 
   const handlePayment = async (orderId: number) => {
     try {
+      setPaymentLoadingId(orderId);
+
       const token = localStorage.getItem("access_token");
+
+      // Save order ID so the payment success/cancel page
+      // knows which order was being paid.
+      localStorage.setItem("payment_order_id", String(orderId));
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/payment/create`,
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
+
             ...(token
               ? {
                   Authorization: `Bearer ${token}`,
                 }
               : {}),
           },
+
           body: JSON.stringify({
             order_id: orderId,
           }),
@@ -178,13 +384,15 @@ export default function RecentOrders({ orders }: RecentOrdersProps) {
         throw new Error(data?.message || "Payment creation failed");
       }
 
-      // Stripe checkout URL
+      // ================= STRIPE CHECKOUT URL =================
+
       if (data?.url) {
         window.location.href = data.url;
         return;
       }
 
-      // Alternative checkout URL
+      // ================= ALTERNATIVE CHECKOUT URL =================
+
       if (data?.checkout_url) {
         window.location.href = data.checkout_url;
         return;
@@ -194,23 +402,41 @@ export default function RecentOrders({ orders }: RecentOrdersProps) {
     } catch (error) {
       console.error("Payment error:", error);
 
+      setPaymentLoadingId(null);
+
       toast.error(
         error instanceof Error ? error.message : "Unable to start payment",
       );
     }
   };
 
+  // ======================================================
+  // VISIBLE ORDERS
+  // ======================================================
+
   const visibleOrders = orders.filter(
     (order) => !hiddenOrderIds.includes(order.id),
   );
+
+  // ======================================================
+  // HIDDEN ORDERS
+  // ======================================================
 
   const hiddenOrders = orders.filter((order) =>
     hiddenOrderIds.includes(order.id),
   );
 
+  // ======================================================
+  // CURRENT ORDERS
+  // ======================================================
+
   const currentOrders = activeTab === "visible" ? visibleOrders : hiddenOrders;
 
   const recentOrders = currentOrders.slice(0, 5);
+
+  // ======================================================
+  // MAIN
+  // ======================================================
 
   return (
     <section className="mt-8 space-y-6">
@@ -288,282 +514,375 @@ export default function RecentOrders({ orders }: RecentOrdersProps) {
         /* ================= ORDER CARDS ================= */
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          {recentOrders.map((order) => (
-            <article
-              key={order.id}
-              className="
-                flex h-full flex-col overflow-hidden
-                rounded-[22px]
-                border border-[#e1b7b7]
-                bg-white
-                shadow-[0_8px_24px_rgba(168,32,32,0.10)]
-                transition duration-300
-                hover:-translate-y-0.5
-                hover:shadow-[0_12px_30px_rgba(168,32,32,0.16)]
-              "
-            >
-              {/* ================= CARD HEADER ================= */}
+          {recentOrders.map((order) => {
+            const currentPaymentStatus =
+              paymentStatuses[order.id] || order.payment_status || "unpaid";
 
-              <div className="border-b border-[#e6c2c2] bg-[#fff6f6] px-5 py-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-semibold text-[#351818]">
-                        Order #{order.id}
-                      </h3>
+            const isPaymentLoading = paymentLoadingId === order.id;
 
-                      <StatusBadge status={order.status} />
+            return (
+              <article
+                key={order.id}
+                className="
+                  flex h-full flex-col overflow-hidden
+                  rounded-[22px]
+                  border border-[#e1b7b7]
+                  bg-white
+                  shadow-[0_8px_24px_rgba(168,32,32,0.10)]
+                  transition duration-300
+                  hover:-translate-y-0.5
+                  hover:shadow-[0_12px_30px_rgba(168,32,32,0.16)]
+                "
+              >
+                {/* ================= CARD HEADER ================= */}
+
+                <div className="border-b border-[#e6c2c2] bg-[#fff6f6] px-5 py-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base font-semibold text-[#351818]">
+                          Order #{order.id}
+                        </h3>
+
+                        <StatusBadge status={order.status} />
+
+                        <PaymentBadge status={currentPaymentStatus} />
+                      </div>
+
+                      <p className="mt-1 text-xs text-[#8b6666]">
+                        Ordered on {formatDate(order.created_at)}
+                      </p>
                     </div>
 
-                    <p className="mt-1 text-xs text-[#8b6666]">
-                      Ordered on {formatDate(order.created_at)}
-                    </p>
-                  </div>
+                    <div className="text-right">
+                      <p className="text-xs text-[#8b6666]">Total Amount</p>
 
-                  <div className="text-right">
-                    <p className="text-xs text-[#8b6666]">Total Amount</p>
-
-                    <p className="mt-1 text-lg font-bold text-[#A82020]">
-                      ৳{Number(order.total_amount).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* ================= CARD BODY ================= */}
-
-              <div className="flex flex-1 flex-col p-5">
-                {/* Rental Details */}
-
-                <div>
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-[#351818]">
-                      Rental Details
-                    </h4>
-
-                    <p className="mt-1 text-xs text-[#7d6262]">
-                      Your rental period and duration
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 rounded-xl border border-[#e8caca] bg-[#fffafa] p-4 sm:grid-cols-3">
-                    <InfoItem
-                      icon={<CalendarDays className="h-4 w-4" />}
-                      label="Start Date"
-                      value={formatDate(order.start_date)}
-                    />
-
-                    <InfoItem
-                      icon={<CalendarDays className="h-4 w-4" />}
-                      label="End Date"
-                      value={formatDate(order.end_date)}
-                    />
-
-                    <InfoItem
-                      icon={<Clock className="h-4 w-4" />}
-                      label="Duration"
-                      value={`${order.duration_days} ${
-                        order.duration_days === 1 ? "day" : "days"
-                      }`}
-                    />
+                      <p className="mt-1 text-lg font-bold text-[#A82020]">
+                        ৳{Number(order.total_amount).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Divider */}
+                {/* ================= CARD BODY ================= */}
 
-                <div className="my-5 h-px bg-[#ead0d0]" />
+                <div className="flex flex-1 flex-col p-5">
+                  {/* ================= RENTAL DETAILS ================= */}
 
-                {/* Ordered Tools */}
+                  <div>
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-[#351818]">
+                        Rental Details
+                      </h4>
 
-                <div>
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-[#351818]">
-                      Ordered Tools
-                    </h4>
+                      <p className="mt-1 text-xs text-[#7d6262]">
+                        Your rental period and duration
+                      </p>
+                    </div>
 
-                    <p className="mt-1 text-xs text-[#7d6262]">
-                      Tools included in this rental order
-                    </p>
+                    <div className="grid grid-cols-1 gap-4 rounded-xl border border-[#e8caca] bg-[#fffafa] p-4 sm:grid-cols-3">
+                      <InfoItem
+                        icon={<CalendarDays className="h-4 w-4" />}
+                        label="Start Date"
+                        value={formatDate(order.start_date)}
+                      />
+
+                      <InfoItem
+                        icon={<CalendarDays className="h-4 w-4" />}
+                        label="End Date"
+                        value={formatDate(order.end_date)}
+                      />
+
+                      <InfoItem
+                        icon={<Clock className="h-4 w-4" />}
+                        label="Duration"
+                        value={`${order.duration_days} ${
+                          order.duration_days === 1 ? "day" : "days"
+                        }`}
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-3">
-                    {order.tools.map((tool) => (
-                      <div
-                        key={tool.id}
-                        className="
-                          flex items-center gap-3
-                          rounded-xl
-                          border border-[#e8caca]
-                          bg-[#fffafa]
-                          p-3
-                          shadow-sm
-                          transition-all duration-300
-                          hover:border-[#dba8a8]
-                          hover:bg-[#fff5f5]
-                        "
-                      >
-                        {/* Tool Image */}
+                  {/* ================= DIVIDER ================= */}
 
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#f7e5e5]">
-                          {tool.tool_image ? (
-                            <img
-                              src={getToolImage(tool.tool_image)}
-                              alt={tool.tool_name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center">
-                              <Package className="h-6 w-6 text-[#9b7373]" />
+                  <div className="my-5 h-px bg-[#ead0d0]" />
+
+                  {/* ================= ORDERED TOOLS ================= */}
+
+                  <div>
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-[#351818]">
+                        Ordered Tools
+                      </h4>
+
+                      <p className="mt-1 text-xs text-[#7d6262]">
+                        Tools included in this rental order
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {order.tools.map((tool) => (
+                        <div
+                          key={tool.id}
+                          className="
+                            flex items-center gap-3
+                            rounded-xl
+                            border border-[#e8caca]
+                            bg-[#fffafa]
+                            p-3
+                            shadow-sm
+                            transition-all duration-300
+                            hover:border-[#dba8a8]
+                            hover:bg-[#fff5f5]
+                          "
+                        >
+                          {/* TOOL IMAGE */}
+
+                          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#f7e5e5]">
+                            {tool.tool_image ? (
+                              <img
+                                src={getToolImage(tool.tool_image)}
+                                alt={tool.tool_name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center">
+                                <Package className="h-6 w-6 text-[#9b7373]" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* TOOL INFORMATION */}
+
+                          <div className="min-w-0 flex-1">
+                            <h5 className="truncate text-sm font-semibold text-[#351818]">
+                              {tool.tool_name}
+                            </h5>
+
+                            <p className="mt-1 text-xs text-[#7d6262]">
+                              Brand: {tool.brand || "N/A"}
+                            </p>
+
+                            <div className="mt-1 flex items-center gap-1 text-xs text-[#7d6262]">
+                              <MapPin className="h-3 w-3" />
+
+                              <span className="truncate">
+                                {tool.location || "N/A"}
+                              </span>
                             </div>
-                          )}
-                        </div>
+                          </div>
 
-                        {/* Tool Information */}
+                          {/* PRICE */}
 
-                        <div className="min-w-0 flex-1">
-                          <h5 className="truncate text-sm font-semibold text-[#351818]">
-                            {tool.tool_name}
-                          </h5>
+                          <div className="shrink-0 text-right">
+                            <p className="text-xs text-[#7d6262]">Per day</p>
 
-                          <p className="mt-1 text-xs text-[#7d6262]">
-                            Brand: {tool.brand || "N/A"}
-                          </p>
-
-                          <div className="mt-1 flex items-center gap-1 text-xs text-[#7d6262]">
-                            <MapPin className="h-3 w-3" />
-
-                            <span className="truncate">
-                              {tool.location || "N/A"}
-                            </span>
+                            <p className="mt-1 text-sm font-bold text-[#A82020]">
+                              ৳
+                              {Number(
+                                tool.rental_price_per_day,
+                              ).toLocaleString()}
+                            </p>
                           </div>
                         </div>
-
-                        {/* Price */}
-
-                        <div className="shrink-0 text-right">
-                          <p className="text-xs text-[#7d6262]">Per day</p>
-
-                          <p className="mt-1 text-sm font-bold text-[#A82020]">
-                            ৳
-                            {Number(tool.rental_price_per_day).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Message */}
-
-                {order.message && (
-                  <>
-                    <div className="my-5 h-px bg-[#ead0d0]" />
-
-                    <div className="rounded-xl border border-[#e8caca] bg-[#fffafa] p-4">
-                      <p className="text-xs font-semibold text-[#351818]">
-                        Message
-                      </p>
-
-                      <p className="mt-1 text-sm leading-6 text-[#7d6262]">
-                        {order.message}
-                      </p>
+                      ))}
                     </div>
-                  </>
-                )}
+                  </div>
 
-                {/* ================= ACTION ================= */}
+                  {/* ================= MESSAGE ================= */}
 
-                <div className="mt-auto space-y-3 pt-5">
-                  {/* ================= STRIPE PAYMENT ================= */}
+                  {order.message && (
+                    <>
+                      <div className="my-5 h-px bg-[#ead0d0]" />
 
-                  {activeTab === "visible" && order.status === "approved" && (
-                    <button
-                      type="button"
-                      onClick={() => handlePayment(order.id)}
-                      className="
+                      <div className="rounded-xl border border-[#e8caca] bg-[#fffafa] p-4">
+                        <p className="text-xs font-semibold text-[#351818]">
+                          Message
+                        </p>
+
+                        <p className="mt-1 text-sm leading-6 text-[#7d6262]">
+                          {order.message}
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ================= ACTION ================= */}
+
+                  <div className="mt-auto space-y-3 pt-5">
+                    {/* ================= STRIPE PAYMENT ================= */}
+
+                    {activeTab === "visible" && order.status === "approved" && (
+                      <>
+                        {/* ================= UNPAID ================= */}
+
+                        {currentPaymentStatus === "unpaid" && (
+                          <button
+                            type="button"
+                            onClick={() => handlePayment(order.id)}
+                            disabled={isPaymentLoading}
+                            className="
+                                group flex w-full items-center justify-center gap-2
+                                rounded-xl
+                                bg-[#635BFF]
+                                px-4 py-3
+                                text-sm font-semibold
+                                text-white
+                                transition-all duration-300
+                                hover:bg-[#5149d8]
+                                hover:shadow-[0_6px_18px_rgba(99,91,255,0.28)]
+                                disabled:cursor-not-allowed
+                                disabled:opacity-60
+                              "
+                          >
+                            {isPaymentLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Redirecting to Stripe...
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard
+                                  className="
+                                      h-4 w-4
+                                      transition-transform duration-300
+                                      group-hover:scale-110
+                                    "
+                                />
+                                Pay with Stripe
+                                <ArrowRight
+                                  className="
+                                      h-4 w-4
+                                      transition-transform duration-300
+                                      group-hover:translate-x-1
+                                    "
+                                />
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        {/* ================= PAID ================= */}
+
+                        {currentPaymentStatus === "paid" && (
+                          <button
+                            type="button"
+                            disabled
+                            className="
+                                flex w-full cursor-not-allowed
+                                items-center justify-center gap-2
+                                rounded-xl
+                                border border-[#b9d8bf]
+                                bg-[#e4f3e7]
+                                px-4 py-3
+                                text-sm font-semibold
+                                text-[#2f6b3a]
+                                opacity-90
+                              "
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            PAID
+                          </button>
+                        )}
+
+                        {/* ================= CANCELLED ================= */}
+
+                        {currentPaymentStatus === "cancelled" && (
+                          <button
+                            type="button"
+                            disabled
+                            className="
+                                flex w-full cursor-not-allowed
+                                items-center justify-center gap-2
+                                rounded-xl
+                                border border-[#e4baba]
+                                bg-[#f8dddd]
+                                px-4 py-3
+                                text-sm font-semibold
+                                text-[#A82020]
+                                opacity-90
+                              "
+                          >
+                            <EyeOff className="h-4 w-4" />
+                            CANCELLED
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {/* ================= PAYMENT MESSAGE ================= */}
+
+                    {activeTab === "visible" &&
+                      order.status === "approved" &&
+                      currentPaymentStatus === "paid" && (
+                        <div className="rounded-xl border border-[#b9d8bf] bg-[#edf7ef] px-4 py-3 text-center text-xs font-medium text-[#2f6b3a]">
+                          Payment completed successfully.
+                        </div>
+                      )}
+
+                    {activeTab === "visible" &&
+                      order.status === "approved" &&
+                      currentPaymentStatus === "cancelled" && (
+                        <div className="rounded-xl border border-[#e4baba] bg-[#fff0ed] px-4 py-3 text-center text-xs font-medium text-[#A82020]">
+                          Payment was cancelled.
+                        </div>
+                      )}
+
+                    {/* ================= EXISTING ACTION ================= */}
+
+                    {activeTab === "visible" ? (
+                      <button
+                        type="button"
+                        onClick={() => hideOrder(order.id)}
+                        className="
                           group flex w-full items-center justify-center gap-2
                           rounded-xl
-                          bg-[#635BFF]
+                          border border-[#dfbaba]
+                          bg-[#fff8f8]
                           px-4 py-3
-                          text-sm font-semibold
-                          text-white
+                          text-sm font-medium
+                          text-[#7e3535]
                           transition-all duration-300
-                          hover:bg-[#5149d8]
-                          hover:shadow-[0_6px_18px_rgba(99,91,255,0.28)]
+                          hover:border-[#A82020]
+                          hover:bg-[#A82020]
+                          hover:text-white
+                          hover:shadow-[0_6px_18px_rgba(168,32,32,0.22)]
                         "
-                    >
-                      <CreditCard
-                        className="
+                      >
+                        <EyeOff
+                          className="
                             h-4 w-4
                             transition-transform duration-300
                             group-hover:scale-110
                           "
-                      />
-                      Pay with Stripe
-                      <ArrowRight
+                        />
+                        Hide Order
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => showOrder(order.id)}
                         className="
-                            h-4 w-4
-                            transition-transform duration-300
-                            group-hover:translate-x-1
-                          "
-                      />
-                    </button>
-                  )}
-
-                  {/* ================= EXISTING ACTION ================= */}
-
-                  {activeTab === "visible" ? (
-                    <button
-                      type="button"
-                      onClick={() => hideOrder(order.id)}
-                      className="
-                        group flex w-full items-center justify-center gap-2
-                        rounded-xl
-                        border border-[#dfbaba]
-                        bg-[#fff8f8]
-                        px-4 py-3
-                        text-sm font-medium
-                        text-[#7e3535]
-                        transition-all duration-300
-                        hover:border-[#A82020]
-                        hover:bg-[#A82020]
-                        hover:text-white
-                        hover:shadow-[0_6px_18px_rgba(168,32,32,0.22)]
-                      "
-                    >
-                      <EyeOff
-                        className="
-                          h-4 w-4
-                          transition-transform duration-300
-                          group-hover:scale-110
+                          flex w-full items-center justify-center gap-2
+                          rounded-xl
+                          bg-[#A82020]
+                          px-4 py-3
+                          text-sm font-medium
+                          text-white
+                          transition-all duration-300
+                          hover:bg-[#8f1b1b]
+                          hover:shadow-[0_6px_18px_rgba(168,32,32,0.22)]
                         "
-                      />
-                      Hide Order
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => showOrder(order.id)}
-                      className="
-                        flex w-full items-center justify-center gap-2
-                        rounded-xl
-                        bg-[#A82020]
-                        px-4 py-3
-                        text-sm font-medium
-                        text-white
-                        transition-all duration-300
-                        hover:bg-[#8f1b1b]
-                        hover:shadow-[0_6px_18px_rgba(168,32,32,0.22)]
-                      "
-                    >
-                      <Eye className="h-4 w-4" />
-                      Show Order
-                    </button>
-                  )}
+                      >
+                        <Eye className="h-4 w-4" />
+                        Show Order
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
     </section>
