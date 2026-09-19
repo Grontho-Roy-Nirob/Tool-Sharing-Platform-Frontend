@@ -59,9 +59,7 @@ export interface RenterOrder {
 interface RecentOrdersProps {
   orders: RenterOrder[];
 
-  // Optional callback.
-  // Parent component can use this to reload orders
-  // after payment status changes.
+  // Optional callback
   onPaymentStatusChange?: (
     orderId: number,
     paymentStatus: PaymentStatus,
@@ -72,6 +70,10 @@ interface PaymentStatusResponse {
   payment_status: PaymentStatus;
 }
 
+// ======================================================
+// ORDER STATUS STYLE
+// ======================================================
+
 const statusStyles: Record<OrderStatus, string> = {
   pending: "bg-[#fff1d6] text-[#8a5a00]",
   approved: "bg-[#e4f3e7] text-[#2f6b3a]",
@@ -80,6 +82,10 @@ const statusStyles: Record<OrderStatus, string> = {
   completed: "bg-[#eee5f5] text-[#68477f]",
 };
 
+// ======================================================
+// FORMAT DATE
+// ======================================================
+
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -87,6 +93,10 @@ function formatDate(date: string) {
     year: "numeric",
   });
 }
+
+// ======================================================
+// ORDER STATUS BADGE
+// ======================================================
 
 function StatusBadge({ status }: { status: OrderStatus }) {
   return (
@@ -98,27 +108,9 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-function PaymentBadge({ status }: { status: PaymentStatus }) {
-  const styles: Record<PaymentStatus, string> = {
-    unpaid: "bg-[#fff1d6] text-[#8a5a00]",
-    paid: "bg-[#e4f3e7] text-[#2f6b3a]",
-    cancelled: "bg-[#f8dddd] text-[#A82020]",
-  };
-
-  const labels: Record<PaymentStatus, string> = {
-    unpaid: "UNPAID",
-    paid: "PAID",
-    cancelled: "CANCELLED",
-  };
-
-  return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs font-medium ${styles[status]}`}
-    >
-      {labels[status]}
-    </span>
-  );
-}
+// ======================================================
+// INFO ITEM
+// ======================================================
 
 function InfoItem({
   icon,
@@ -142,6 +134,10 @@ function InfoItem({
   );
 }
 
+// ======================================================
+// TOOL IMAGE
+// ======================================================
+
 function getToolImage(image: string) {
   if (!image) {
     return "";
@@ -154,19 +150,31 @@ function getToolImage(image: string) {
   return `${process.env.NEXT_PUBLIC_API_URL}/uploads/${image}`;
 }
 
+// ======================================================
+// MAIN COMPONENT
+// ======================================================
+
 export default function RecentOrders({
   orders,
   onPaymentStatusChange,
 }: RecentOrdersProps) {
+  // ======================================================
+  // HIDDEN ORDERS
+  // ======================================================
+
   const [hiddenOrderIds, setHiddenOrderIds] = useState<number[]>([]);
 
   const [activeTab, setActiveTab] = useState<"visible" | "hidden">("visible");
 
-  // ================= PAYMENT LOADING =================
+  // ======================================================
+  // PAYMENT LOADING
+  // ======================================================
 
   const [paymentLoadingId, setPaymentLoadingId] = useState<number | null>(null);
 
-  // ================= LOCAL PAYMENT STATUS =================
+  // ======================================================
+  // LOCAL PAYMENT STATUS
+  // ======================================================
 
   const [paymentStatuses, setPaymentStatuses] = useState<
     Record<number, PaymentStatus>
@@ -212,12 +220,21 @@ export default function RecentOrders({
 
   const checkPaymentStatus = async (orderId: number) => {
     try {
+      const token = localStorage.getItem("access_token");
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/payment/status/${orderId}`,
         {
           method: "GET",
+
           headers: {
             "Content-Type": "application/json",
+
+            ...(token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : {}),
           },
         },
       );
@@ -266,28 +283,30 @@ export default function RecentOrders({
     }
 
     let attempts = 0;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const checkStatus = async () => {
       attempts++;
 
       await checkPaymentStatus(orderId);
 
-      // Stripe webhook may take a little time.
-      // Check several times after returning from Stripe.
+      // Stripe webhook may take some time
       if (attempts < 15) {
-        setTimeout(checkStatus, 2000);
+        timeoutId = setTimeout(checkStatus, 2000);
       }
     };
 
     checkStatus();
 
     return () => {
-      // Nothing else is required here.
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, []);
 
   // ======================================================
-  // CHECK UNPAID ORDERS PERIODICALLY
+  // CHECK UNPAID APPROVED ORDERS PERIODICALLY
   // ======================================================
 
   useEffect(() => {
@@ -353,8 +372,7 @@ export default function RecentOrders({
 
       const token = localStorage.getItem("access_token");
 
-      // Save order ID so the payment success/cancel page
-      // knows which order was being paid.
+      // Save order ID
       localStorage.setItem("payment_order_id", String(orderId));
 
       const response = await fetch(
@@ -384,14 +402,18 @@ export default function RecentOrders({
         throw new Error(data?.message || "Payment creation failed");
       }
 
-      // ================= STRIPE CHECKOUT URL =================
+      // ==================================================
+      // STRIPE CHECKOUT URL
+      // ==================================================
 
       if (data?.url) {
         window.location.href = data.url;
         return;
       }
 
-      // ================= ALTERNATIVE CHECKOUT URL =================
+      // ==================================================
+      // ALTERNATIVE CHECKOUT URL
+      // ==================================================
 
       if (data?.checkout_url) {
         window.location.href = data.checkout_url;
@@ -515,6 +537,10 @@ export default function RecentOrders({
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           {recentOrders.map((order) => {
+            // ==================================================
+            // CURRENT PAYMENT STATUS
+            // ==================================================
+
             const currentPaymentStatus =
               paymentStatuses[order.id] || order.payment_status || "unpaid";
 
@@ -544,9 +570,8 @@ export default function RecentOrders({
                           Order #{order.id}
                         </h3>
 
+                        {/* ONLY ORDER STATUS */}
                         <StatusBadge status={order.status} />
-
-                        <PaymentBadge status={currentPaymentStatus} />
                       </div>
 
                       <p className="mt-1 text-xs text-[#8b6666]">
@@ -625,16 +650,16 @@ export default function RecentOrders({
                         <div
                           key={tool.id}
                           className="
-                            flex items-center gap-3
-                            rounded-xl
-                            border border-[#e8caca]
-                            bg-[#fffafa]
-                            p-3
-                            shadow-sm
-                            transition-all duration-300
-                            hover:border-[#dba8a8]
-                            hover:bg-[#fff5f5]
-                          "
+                              flex items-center gap-3
+                              rounded-xl
+                              border border-[#e8caca]
+                              bg-[#fffafa]
+                              p-3
+                              shadow-sm
+                              transition-all duration-300
+                              hover:border-[#dba8a8]
+                              hover:bg-[#fff5f5]
+                            "
                         >
                           {/* TOOL IMAGE */}
 
@@ -710,7 +735,9 @@ export default function RecentOrders({
                   {/* ================= ACTION ================= */}
 
                   <div className="mt-auto space-y-3 pt-5">
-                    {/* ================= STRIPE PAYMENT ================= */}
+                    {/* ==================================================
+                        STRIPE PAYMENT BUTTON
+                        ================================================== */}
 
                     {activeTab === "visible" && order.status === "approved" && (
                       <>
@@ -809,24 +836,6 @@ export default function RecentOrders({
                         )}
                       </>
                     )}
-
-                    {/* ================= PAYMENT MESSAGE ================= */}
-
-                    {activeTab === "visible" &&
-                      order.status === "approved" &&
-                      currentPaymentStatus === "paid" && (
-                        <div className="rounded-xl border border-[#b9d8bf] bg-[#edf7ef] px-4 py-3 text-center text-xs font-medium text-[#2f6b3a]">
-                          Payment completed successfully.
-                        </div>
-                      )}
-
-                    {activeTab === "visible" &&
-                      order.status === "approved" &&
-                      currentPaymentStatus === "cancelled" && (
-                        <div className="rounded-xl border border-[#e4baba] bg-[#fff0ed] px-4 py-3 text-center text-xs font-medium text-[#A82020]">
-                          Payment was cancelled.
-                        </div>
-                      )}
 
                     {/* ================= EXISTING ACTION ================= */}
 
