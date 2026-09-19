@@ -70,7 +70,7 @@ interface PaymentStatusResponse {
 }
 
 // ======================================================
-// ORDER STATUS STYLE
+// STATUS STYLE
 // ======================================================
 
 const statusStyles: Record<OrderStatus, string> = {
@@ -94,13 +94,15 @@ function formatDate(date: string) {
 }
 
 // ======================================================
-// ORDER STATUS BADGE
+// STATUS BADGE
 // ======================================================
 
 function StatusBadge({ status }: { status: OrderStatus }) {
   return (
     <span
-      className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${statusStyles[status]}`}
+      className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${
+        statusStyles[status]
+      }`}
     >
       {status}
     </span>
@@ -150,6 +152,50 @@ function getToolImage(image: string) {
 }
 
 // ======================================================
+// LOCAL STORAGE PAYMENT STATUS
+// ======================================================
+
+function getSavedPaymentStatuses(): Record<number, PaymentStatus> {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const saved = localStorage.getItem("renter_payment_statuses");
+
+    if (!saved) {
+      return {};
+    }
+
+    const parsed = JSON.parse(saved);
+
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+
+    return {};
+  } catch {
+    return {};
+  }
+}
+
+// ======================================================
+// SAVE PAYMENT STATUS
+// ======================================================
+
+function savePaymentStatuses(statuses: Record<number, PaymentStatus>) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem("renter_payment_statuses", JSON.stringify(statuses));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+// ======================================================
 // MAIN COMPONENT
 // ======================================================
 
@@ -172,17 +218,7 @@ export default function RecentOrders({
   const [paymentLoadingId, setPaymentLoadingId] = useState<number | null>(null);
 
   // ======================================================
-  // LOCAL PAYMENT STATUS
-  //
-  // IMPORTANT:
-  // Each order has its own payment status.
-  //
-  // Example:
-  // {
-  //   1: "paid",
-  //   2: "paid",
-  //   3: "unpaid"
-  // }
+  // PAYMENT STATUS
   // ======================================================
 
   const [paymentStatuses, setPaymentStatuses] = useState<
@@ -212,54 +248,74 @@ export default function RecentOrders({
   // ======================================================
   // INITIALIZE PAYMENT STATUS
   //
-  // IMPORTANT FIX:
+  // BACKEND IS THE MAIN SOURCE
   //
-  // Do NOT recreate the whole paymentStatuses object
-  // every time orders change.
+  // If backend says PAID:
+  // always use PAID.
   //
-  // Otherwise:
+  // If backend says CANCELLED:
+  // always use CANCELLED.
   //
-  // Order #1 = PAID
-  // Order #2 = PAID
-  //
-  // refresh হলে Order #1 আবার UNPAID হয়ে যেতে পারে.
-  //
-  // এখানে আগের PAID/CANCELLED status preserve করা হচ্ছে.
   // ======================================================
 
   useEffect(() => {
     setPaymentStatuses((currentStatuses) => {
+      const savedStatuses = getSavedPaymentStatuses();
+
       const updatedStatuses: Record<number, PaymentStatus> = {
+        ...savedStatuses,
         ...currentStatuses,
       };
 
       orders.forEach((order) => {
-        const existingStatus = currentStatuses[order.id];
+        const backendStatus = order.payment_status || "unpaid";
 
         // ================================================
-        // NEVER CHANGE PAID
+        // BACKEND PAID
         // ================================================
 
-        if (existingStatus === "paid") {
+        if (backendStatus === "paid") {
           updatedStatuses[order.id] = "paid";
           return;
         }
 
         // ================================================
-        // NEVER CHANGE CANCELLED
+        // BACKEND CANCELLED
         // ================================================
 
-        if (existingStatus === "cancelled") {
+        if (backendStatus === "cancelled") {
           updatedStatuses[order.id] = "cancelled";
           return;
         }
 
         // ================================================
-        // NEW ORDER
+        // EXISTING LOCAL PAID
+        //
+        // Do not change back to unpaid
         // ================================================
 
-        updatedStatuses[order.id] = order.payment_status || "unpaid";
+        if (updatedStatuses[order.id] === "paid") {
+          return;
+        }
+
+        // ================================================
+        // EXISTING LOCAL CANCELLED
+        //
+        // Do not change back to unpaid
+        // ================================================
+
+        if (updatedStatuses[order.id] === "cancelled") {
+          return;
+        }
+
+        // ================================================
+        // OTHERWISE UNPAID
+        // ================================================
+
+        updatedStatuses[order.id] = "unpaid";
       });
+
+      savePaymentStatuses(updatedStatuses);
 
       return updatedStatuses;
     });
@@ -296,45 +352,78 @@ export default function RecentOrders({
 
       const data: PaymentStatusResponse = await response.json();
 
+      // ====================================================
+      // INVALID RESPONSE
+      // ====================================================
+
       if (
-        data?.payment_status === "paid" ||
-        data?.payment_status === "cancelled" ||
-        data?.payment_status === "unpaid"
+        data?.payment_status !== "paid" &&
+        data?.payment_status !== "cancelled" &&
+        data?.payment_status !== "unpaid"
       ) {
-        setPaymentStatuses((currentStatuses) => {
-          const existingStatus = currentStatuses[orderId];
-
-          // ==============================================
-          // IMPORTANT:
-          //
-          // If this specific order is already PAID,
-          // don't allow it to become UNPAID.
-          // ==============================================
-
-          if (existingStatus === "paid" && data.payment_status !== "paid") {
-            return currentStatuses;
-          }
-
-          // ==============================================
-          // If this specific order is CANCELLED,
-          // don't allow it to become UNPAID.
-          // ==============================================
-
-          if (
-            existingStatus === "cancelled" &&
-            data.payment_status === "unpaid"
-          ) {
-            return currentStatuses;
-          }
-
-          return {
-            ...currentStatuses,
-            [orderId]: data.payment_status,
-          };
-        });
-
-        onPaymentStatusChange?.(orderId, data.payment_status);
+        return;
       }
+
+      // ====================================================
+      // PAYMENT FINISHED
+      //
+      // Remove payment_order_id
+      // ====================================================
+
+      if (
+        data.payment_status === "paid" ||
+        data.payment_status === "cancelled"
+      ) {
+        const currentPaymentOrderId = localStorage.getItem("payment_order_id");
+
+        if (currentPaymentOrderId === String(orderId)) {
+          localStorage.removeItem("payment_order_id");
+        }
+      }
+
+      // ====================================================
+      // UPDATE STATUS
+      // ====================================================
+
+      setPaymentStatuses((currentStatuses) => {
+        const existingStatus = currentStatuses[orderId];
+
+        // ================================================
+        // NEVER CHANGE PAID
+        // ================================================
+
+        if (existingStatus === "paid" && data.payment_status !== "paid") {
+          return currentStatuses;
+        }
+
+        // ================================================
+        // NEVER CHANGE CANCELLED TO UNPAID
+        // ================================================
+
+        if (
+          existingStatus === "cancelled" &&
+          data.payment_status === "unpaid"
+        ) {
+          return currentStatuses;
+        }
+
+        const updatedStatuses = {
+          ...currentStatuses,
+          [orderId]: data.payment_status,
+        };
+
+        savePaymentStatuses(updatedStatuses);
+
+        return updatedStatuses;
+      });
+
+      // ====================================================
+      // IMPORTANT:
+      //
+      // NO SUCCESS TOAST
+      // ====================================================
+
+      onPaymentStatusChange?.(orderId, data.payment_status);
     } catch (error) {
       console.error(
         `Failed to check payment status for order ${orderId}:`,
@@ -344,7 +433,7 @@ export default function RecentOrders({
   };
 
   // ======================================================
-  // CHECK PAYMENT STATUS AFTER RETURNING FROM STRIPE
+  // CHECK PAYMENT STATUS AFTER STRIPE RETURN
   // ======================================================
 
   useEffect(() => {
@@ -369,7 +458,10 @@ export default function RecentOrders({
 
       await checkPaymentStatus(orderId);
 
-      // Stripe webhook may take some time
+      // ==================================================
+      // Stripe webhook may need some time
+      // ==================================================
+
       if (attempts < 15) {
         timeoutId = setTimeout(checkStatus, 2000);
       }
@@ -385,7 +477,7 @@ export default function RecentOrders({
   }, []);
 
   // ======================================================
-  // CHECK UNPAID APPROVED ORDERS PERIODICALLY
+  // CHECK APPROVED UNPAID ORDERS
   // ======================================================
 
   useEffect(() => {
@@ -451,7 +543,10 @@ export default function RecentOrders({
 
       const token = localStorage.getItem("access_token");
 
-      // Save CURRENT order ID only
+      // ================================================
+      // Save current order
+      // ================================================
+
       localStorage.setItem("payment_order_id", String(orderId));
 
       const response = await fetch(
@@ -504,6 +599,11 @@ export default function RecentOrders({
       console.error("Payment error:", error);
 
       setPaymentLoadingId(null);
+
+      // ================================================
+      // Only actual payment error toast
+      // No "payment successful" toast
+      // ================================================
 
       toast.error(
         error instanceof Error ? error.message : "Unable to start payment",
@@ -618,16 +718,6 @@ export default function RecentOrders({
           {recentOrders.map((order) => {
             // ==================================================
             // CURRENT PAYMENT STATUS
-            //
-            // VERY IMPORTANT:
-            //
-            // order.id is used as the key.
-            //
-            // So:
-            //
-            // Order #1 → paymentStatuses[1]
-            // Order #2 → paymentStatuses[2]
-            // Order #3 → paymentStatuses[3]
             // ==================================================
 
             const currentPaymentStatus =
@@ -738,16 +828,16 @@ export default function RecentOrders({
                         <div
                           key={tool.id}
                           className="
-                            flex items-center gap-3
-                            rounded-xl
-                            border border-[#e8caca]
-                            bg-[#fffafa]
-                            p-3
-                            shadow-sm
-                            transition-all duration-300
-                            hover:border-[#dba8a8]
-                            hover:bg-[#fff5f5]
-                          "
+                              flex items-center gap-3
+                              rounded-xl
+                              border border-[#e8caca]
+                              bg-[#fffafa]
+                              p-3
+                              shadow-sm
+                              transition-all duration-300
+                              hover:border-[#dba8a8]
+                              hover:bg-[#fff5f5]
+                            "
                         >
                           {/* TOOL IMAGE */}
 
@@ -824,7 +914,7 @@ export default function RecentOrders({
 
                   <div className="mt-auto space-y-3 pt-5">
                     {/* ==================================================
-                        STRIPE PAYMENT BUTTON
+                        PAYMENT
                         ================================================== */}
 
                     {activeTab === "visible" && order.status === "approved" && (
@@ -925,7 +1015,7 @@ export default function RecentOrders({
                       </>
                     )}
 
-                    {/* ================= EXISTING ACTION ================= */}
+                    {/* ================= HIDE / SHOW ================= */}
 
                     {activeTab === "visible" ? (
                       <button
