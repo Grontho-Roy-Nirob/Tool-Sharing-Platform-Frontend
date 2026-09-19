@@ -2,14 +2,11 @@
 
 import axios from "axios";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Eye,
-  EyeOff,
-  Hammer,
-  Share2,
-} from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Hammer, Share2 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
 import { registerSchema } from "@/schemas/renterAuthSc";
 import { registerRenter } from "@/app/(renter)/_actions/authAction";
 
@@ -26,9 +23,9 @@ const RenterRegistrationForm = () => {
     profileImage?: string;
   }>({});
 
-  const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
+  const router = useRouter();
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setLoading(true);
@@ -68,8 +65,7 @@ const RenterRegistrationForm = () => {
           typeof field === "string" &&
           !fieldErrors[field as keyof typeof fieldErrors]
         ) {
-          fieldErrors[field as keyof typeof fieldErrors] =
-            issue.message;
+          fieldErrors[field as keyof typeof fieldErrors] = issue.message;
         }
       });
 
@@ -84,8 +80,13 @@ const RenterRegistrationForm = () => {
 
       console.log("Registration successful:", response);
 
-      // TODO:
-      // Redirect to /renter
+      // ==================== SUCCESS TOAST ====================
+      toast.success("Registration successful!", {
+        description: "Your ToolShare renter account has been created.",
+      });
+
+      // ==================== GO TO LOGIN PAGE ====================
+      router.push("/renter");
     } catch (error) {
       console.error("Registration error:", error);
 
@@ -98,15 +99,12 @@ const RenterRegistrationForm = () => {
           });
         } else {
           setErrors({
-            email:
-              message ??
-              "Unable to create your account.",
+            email: message ?? "Unable to create your account.",
           });
         }
       } else {
         setErrors({
-          email:
-            "Something went wrong. Please try again.",
+          email: "Something went wrong. Please try again.",
         });
       }
     } finally {
@@ -279,18 +277,13 @@ const RenterRegistrationForm = () => {
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Join ToolShare and start borrowing tools from your
-              community.
+              Join ToolShare and start borrowing tools from your community.
             </p>
           </div>
 
           {/* Form */}
-          <form
-            onSubmit={handleSubmit}
-            noValidate
-          >
+          <form onSubmit={handleSubmit} noValidate>
             <div className="space-y-5">
-
               {/* Full Name */}
               <div>
                 <label
@@ -414,11 +407,7 @@ const RenterRegistrationForm = () => {
                   <input
                     id="password"
                     name="password"
-                    type={
-                      showPassword
-                        ? "text"
-                        : "password"
-                    }
+                    type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     placeholder="••••••••"
                     disabled={loading}
@@ -447,16 +436,10 @@ const RenterRegistrationForm = () => {
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowPassword(
-                        (value) => !value
-                      )
-                    }
+                    onClick={() => setShowPassword((value) => !value)}
                     disabled={loading}
                     aria-label={
-                      showPassword
-                        ? "Hide password"
-                        : "Show password"
+                      showPassword ? "Hide password" : "Show password"
                     }
                     className="
                       absolute
@@ -684,9 +667,7 @@ const RenterRegistrationForm = () => {
                   disabled:hover:translate-y-0
                 "
               >
-                {loading
-                  ? "Creating Account..."
-                  : "Create Account"}
+                {loading ? "Creating Account..." : "Create Account"}
 
                 {!loading && (
                   <ArrowRight
@@ -750,4 +731,3 @@ const RenterRegistrationForm = () => {
 };
 
 export default RenterRegistrationForm;
-
