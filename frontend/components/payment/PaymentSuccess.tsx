@@ -26,19 +26,10 @@ export default function PaymentSuccess() {
   useEffect(() => {
     const checkPaymentStatus = async () => {
       try {
-        /*
-         * IMPORTANT:
-         * Your backend should return the payment status
-         * for the current payment/order.
-         *
-         * Example:
-         * GET /payment/status/:orderId
-         */
-
         const orderId = localStorage.getItem("payment_order_id");
 
         if (!orderId) {
-          setPaymentStatus("paid");
+          setPaymentStatus("unpaid");
           return;
         }
 
@@ -49,13 +40,7 @@ export default function PaymentSuccess() {
         setPaymentStatus(response.data.payment_status);
       } catch (error) {
         console.error("Failed to check payment status:", error);
-
-        /*
-         * Stripe success page reached.
-         * Keep the successful UI if status endpoint
-         * is not available.
-         */
-        setPaymentStatus("paid");
+        setPaymentStatus("unpaid");
       } finally {
         setLoading(false);
       }
@@ -195,6 +180,8 @@ export default function PaymentSuccess() {
             {/* BUTTONS */}
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              {/* PAID BUTTON */}
+
               <button
                 type="button"
                 disabled
@@ -204,6 +191,8 @@ export default function PaymentSuccess() {
                 PAID
               </button>
 
+              {/* ORDERS */}
+
               <Link
                 href="/renter/orders"
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#ddd7ce] bg-white px-5 py-3.5 text-sm font-semibold text-[#292722] transition-all duration-300 hover:bg-[#f8f6f2]"
@@ -211,6 +200,8 @@ export default function PaymentSuccess() {
                 <PackageCheck className="h-4 w-4" />
                 View My Orders
               </Link>
+
+              {/* DASHBOARD */}
 
               <Link
                 href="/renter"
