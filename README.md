@@ -1,4 +1,3 @@
-
 # 🛠️ ToolShare Platform
 
 **ToolShare Platform** is a web-based tool-sharing and rental management system that connects tool owners with renters through a simple, convenient digital platform.
@@ -133,11 +132,11 @@ The database manages:
 
 ## 🚀 Deployment
 
-| Layer    | Platform | Notes                                                             |
-| -------- | -------- | ----------------------------------------------------------------- |
+| Layer    | Platform | Notes                                                              |
+| -------- | -------- | ------------------------------------------------------------------ |
 | Frontend | Vercel   | [Live Website](https://tool-sharing-platform-frontend.vercel.app/) |
-| Backend  | Render   | NestJS API                                                        |
-| Database | NeonDB   | Production PostgreSQL                                             |
+| Backend  | Render   | NestJS API                                                         |
+| Database | NeonDB   | Production PostgreSQL                                              |
 
 ---
 
@@ -158,7 +157,6 @@ The system brings the entire rental process into one place — from tool listing
 - [ ] Email notifications for order updates
 - [ ] Rental reminders
 - [ ] Improved payment and refund management
-- 
 
 ---
 
