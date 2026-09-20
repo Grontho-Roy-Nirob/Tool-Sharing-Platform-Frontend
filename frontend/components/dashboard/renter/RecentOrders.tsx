@@ -47,7 +47,7 @@ export interface RenterOrder {
   total_amount: number;
   status: OrderStatus;
 
-  // ================= PAYMENT STATUS =================
+  // PAYMENT STATUS 
 
   payment_status: PaymentStatus;
 
@@ -69,10 +69,8 @@ interface PaymentStatusResponse {
   payment_status: PaymentStatus;
 }
 
-// ======================================================
-// STATUS STYLE
-// ======================================================
 
+// STATUS STYLE
 const statusStyles: Record<OrderStatus, string> = {
   pending: "bg-[#fff1d6] text-[#8a5a00]",
   approved: "bg-[#e4f3e7] text-[#2f6b3a]",
@@ -81,10 +79,8 @@ const statusStyles: Record<OrderStatus, string> = {
   completed: "bg-[#eee5f5] text-[#68477f]",
 };
 
-// ======================================================
-// FORMAT DATE
-// ======================================================
 
+// FORMAT DATE
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -93,10 +89,8 @@ function formatDate(date: string) {
   });
 }
 
-// ======================================================
-// CHECK END DATE
-// ======================================================
 
+// CHECK END DATE
 function isRentalCompleted(endDate: string) {
   if (!endDate) {
     return false;
@@ -112,41 +106,23 @@ function isRentalCompleted(endDate: string) {
   return today > rentalEndDate;
 }
 
-// ======================================================
-// GET DISPLAY STATUS
-// ======================================================
 
+// GET DISPLAY STATUS
 function getDisplayStatus(order: RenterOrder): OrderStatus {
-  // ====================================================
-  // BACKEND COMPLETED
-  // ====================================================
 
   if (order.status === "completed") {
     return "completed";
   }
 
-  // ====================================================
-  // END DATE PASSED
-  //
-  // If rental end date has already passed,
-  // show COMPLETED in UI.
-  // ====================================================
-
   if (order.status === "active" && isRentalCompleted(order.end_date)) {
     return "completed";
   }
 
-  // ====================================================
-  // OTHERWISE USE BACKEND STATUS
-  // ====================================================
-
   return order.status;
 }
 
-// ======================================================
-// STATUS BADGE
-// ======================================================
 
+// STATUS BADGE
 function StatusBadge({ status }: { status: OrderStatus }) {
   return (
     <span
@@ -159,10 +135,8 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-// ======================================================
-// INFO ITEM
-// ======================================================
 
+// INFO ITEM
 function InfoItem({
   icon,
   label,
@@ -185,10 +159,8 @@ function InfoItem({
   );
 }
 
-// ======================================================
-// TOOL IMAGE
-// ======================================================
 
+// TOOL IMAGE
 function getToolImage(image: string) {
   if (!image) {
     return "";
@@ -201,10 +173,8 @@ function getToolImage(image: string) {
   return `${process.env.NEXT_PUBLIC_API_URL}/uploads/${image}`;
 }
 
-// ======================================================
-// LOCAL STORAGE PAYMENT STATUS
-// ======================================================
 
+// LOCAL STORAGE PAYMENT STATUS
 function getSavedPaymentStatuses(): Record<number, PaymentStatus> {
   if (typeof window === "undefined") {
     return {};
@@ -229,10 +199,8 @@ function getSavedPaymentStatuses(): Record<number, PaymentStatus> {
   }
 }
 
-// ======================================================
-// SAVE PAYMENT STATUS
-// ======================================================
 
+// SAVE PAYMENT STATUS
 function savePaymentStatuses(statuses: Record<number, PaymentStatus>) {
   if (typeof window === "undefined") {
     return;
@@ -245,40 +213,22 @@ function savePaymentStatuses(statuses: Record<number, PaymentStatus>) {
   }
 }
 
-// ======================================================
-// MAIN COMPONENT
-// ======================================================
 
+// MAIN COMPONENT
 export default function RecentOrders({
   orders,
   onPaymentStatusChange,
 }: RecentOrdersProps) {
-  // ======================================================
-  // HIDDEN ORDERS
-  // ======================================================
-
   const [hiddenOrderIds, setHiddenOrderIds] = useState<number[]>([]);
-
   const [activeTab, setActiveTab] = useState<"visible" | "hidden">("visible");
-
-  // ======================================================
-  // PAYMENT LOADING
-  // ======================================================
-
   const [paymentLoadingId, setPaymentLoadingId] = useState<number | null>(null);
-
-  // ======================================================
-  // PAYMENT STATUS
-  // ======================================================
 
   const [paymentStatuses, setPaymentStatuses] = useState<
     Record<number, PaymentStatus>
   >({});
 
-  // ======================================================
-  // LOAD HIDDEN ORDERS
-  // ======================================================
 
+  // LOAD HIDDEN ORDERS
   useEffect(() => {
     const savedHiddenOrders = localStorage.getItem("renter_hidden_orders");
 
@@ -295,12 +245,8 @@ export default function RecentOrders({
     }
   }, []);
 
-  // ======================================================
-  // INITIALIZE PAYMENT STATUS
-  //
-  // BACKEND IS THE MAIN SOURCE
-  // ======================================================
 
+  // INITIALIZE PAYMENT STATUS
   useEffect(() => {
     setPaymentStatuses((currentStatuses) => {
       const savedStatuses = getSavedPaymentStatuses();
@@ -312,44 +258,23 @@ export default function RecentOrders({
 
       orders.forEach((order) => {
         const backendStatus = order.payment_status || "unpaid";
-
-        // ================================================
-        // BACKEND PAID
-        // ================================================
-
         if (backendStatus === "paid") {
           updatedStatuses[order.id] = "paid";
           return;
         }
-
-        // ================================================
-        // BACKEND CANCELLED
-        // ================================================
 
         if (backendStatus === "cancelled") {
           updatedStatuses[order.id] = "cancelled";
           return;
         }
 
-        // ================================================
-        // EXISTING LOCAL PAID
-        // ================================================
-
         if (updatedStatuses[order.id] === "paid") {
           return;
         }
 
-        // ================================================
-        // EXISTING LOCAL CANCELLED
-        // ================================================
-
         if (updatedStatuses[order.id] === "cancelled") {
           return;
         }
-
-        // ================================================
-        // OTHERWISE UNPAID
-        // ================================================
 
         updatedStatuses[order.id] = "unpaid";
       });
@@ -360,9 +285,6 @@ export default function RecentOrders({
     });
   }, [orders]);
 
-  // ======================================================
-  // CHECK PAYMENT STATUS
-  // ======================================================
 
   const checkPaymentStatus = async (orderId: number) => {
     try {
@@ -391,10 +313,6 @@ export default function RecentOrders({
 
       const data: PaymentStatusResponse = await response.json();
 
-      // ====================================================
-      // INVALID RESPONSE
-      // ====================================================
-
       if (
         data?.payment_status !== "paid" &&
         data?.payment_status !== "cancelled" &&
@@ -402,10 +320,6 @@ export default function RecentOrders({
       ) {
         return;
       }
-
-      // ====================================================
-      // PAYMENT FINISHED
-      // ====================================================
 
       if (
         data.payment_status === "paid" ||
@@ -418,24 +332,13 @@ export default function RecentOrders({
         }
       }
 
-      // ====================================================
-      // UPDATE STATUS
-      // ====================================================
-
       setPaymentStatuses((currentStatuses) => {
         const existingStatus = currentStatuses[orderId];
-
-        // ================================================
-        // NEVER CHANGE PAID
-        // ================================================
 
         if (existingStatus === "paid" && data.payment_status !== "paid") {
           return currentStatuses;
         }
 
-        // ================================================
-        // NEVER CHANGE CANCELLED TO UNPAID
-        // ================================================
 
         if (
           existingStatus === "cancelled" &&
@@ -463,10 +366,6 @@ export default function RecentOrders({
     }
   };
 
-  // ======================================================
-  // CHECK PAYMENT STATUS AFTER STRIPE RETURN
-  // ======================================================
-
   useEffect(() => {
     const paymentOrderId = localStorage.getItem("payment_order_id");
 
@@ -489,10 +388,6 @@ export default function RecentOrders({
 
       await checkPaymentStatus(orderId);
 
-      // ==================================================
-      // Stripe webhook may need some time
-      // ==================================================
-
       if (attempts < 15) {
         timeoutId = setTimeout(checkStatus, 2000);
       }
@@ -506,10 +401,6 @@ export default function RecentOrders({
       }
     };
   }, []);
-
-  // ======================================================
-  // CHECK APPROVED UNPAID ORDERS
-  // ======================================================
 
   useEffect(() => {
     const approvedUnpaidOrders = orders.filter((order) => {
@@ -534,9 +425,6 @@ export default function RecentOrders({
     };
   }, [orders, paymentStatuses]);
 
-  // ======================================================
-  // HIDE ORDER
-  // ======================================================
 
   const hideOrder = (orderId: number) => {
     const updatedIds = hiddenOrderIds.includes(orderId)
@@ -550,10 +438,6 @@ export default function RecentOrders({
     toast.success("Order hidden successfully");
   };
 
-  // ======================================================
-  // SHOW ORDER
-  // ======================================================
-
   const showOrder = (orderId: number) => {
     const updatedIds = hiddenOrderIds.filter((id) => id !== orderId);
 
@@ -564,19 +448,11 @@ export default function RecentOrders({
     toast.success("Order is visible again");
   };
 
-  // ======================================================
-  // STRIPE PAYMENT
-  // ======================================================
-
   const handlePayment = async (orderId: number) => {
     try {
       setPaymentLoadingId(orderId);
 
       const token = localStorage.getItem("access_token");
-
-      // ================================================
-      // Save current order
-      // ================================================
 
       localStorage.setItem("payment_order_id", String(orderId));
 
@@ -607,18 +483,11 @@ export default function RecentOrders({
         throw new Error(data?.message || "Payment creation failed");
       }
 
-      // ==================================================
-      // STRIPE CHECKOUT URL
-      // ==================================================
-
       if (data?.url) {
         window.location.href = data.url;
         return;
       }
 
-      // ==================================================
-      // ALTERNATIVE CHECKOUT URL
-      // ==================================================
 
       if (data?.checkout_url) {
         window.location.href = data.checkout_url;
@@ -637,37 +506,21 @@ export default function RecentOrders({
     }
   };
 
-  // ======================================================
-  // VISIBLE ORDERS
-  // ======================================================
-
   const visibleOrders = orders.filter(
     (order) => !hiddenOrderIds.includes(order.id),
   );
-
-  // ======================================================
-  // HIDDEN ORDERS
-  // ======================================================
 
   const hiddenOrders = orders.filter((order) =>
     hiddenOrderIds.includes(order.id),
   );
 
-  // ======================================================
-  // CURRENT ORDERS
-  // ======================================================
-
   const currentOrders = activeTab === "visible" ? visibleOrders : hiddenOrders;
 
   const recentOrders = currentOrders.slice(0, 5);
 
-  // ======================================================
-  // MAIN
-  // ======================================================
-
   return (
     <section className="mt-8 space-y-6">
-      {/* ================= TABS ================= */}
+      {/* TABS  */}
 
       <div className="flex items-center gap-2 rounded-xl border border-[#e4bcbc] bg-[#fff7f7] p-1">
         <button
@@ -715,7 +568,7 @@ export default function RecentOrders({
         </button>
       </div>
 
-      {/* ================= EMPTY STATE ================= */}
+      {/* EMPTY STATE  */}
 
       {recentOrders.length === 0 ? (
         <div className="rounded-[22px] border border-[#e4bcbc] bg-[#fff7f7] px-6 py-14 text-center shadow-md">
@@ -738,26 +591,13 @@ export default function RecentOrders({
           </p>
         </div>
       ) : (
-        /* ================= ORDER CARDS ================= */
+        /* ORDER CARDS  */
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           {recentOrders.map((order) => {
-            // ==================================================
-            // CURRENT PAYMENT STATUS
-            // ==================================================
 
             const currentPaymentStatus =
               paymentStatuses[order.id] || order.payment_status || "unpaid";
-
-            // ==================================================
-            // DISPLAY STATUS
-            //
-            // Payment successful:
-            // backend changes approved -> active
-            //
-            // End date passed:
-            // active -> completed in UI
-            // ==================================================
 
             const displayStatus = getDisplayStatus(order);
 
@@ -777,7 +617,7 @@ export default function RecentOrders({
                   hover:shadow-[0_12px_30px_rgba(168,32,32,0.16)]
                 "
               >
-                {/* ================= CARD HEADER ================= */}
+                {/* CARD HEADER*/}
 
                 <div className="border-b border-[#e6c2c2] bg-[#fff6f6] px-5 py-5">
                   <div className="flex items-start justify-between gap-4">
@@ -805,10 +645,10 @@ export default function RecentOrders({
                   </div>
                 </div>
 
-                {/* ================= CARD BODY ================= */}
+                {/* CARD BODY  */}
 
                 <div className="flex flex-1 flex-col p-5">
-                  {/* ================= RENTAL DETAILS ================= */}
+                  {/* RENTAL DETAILS  */}
 
                   <div>
                     <div className="mb-4">
@@ -844,11 +684,11 @@ export default function RecentOrders({
                     </div>
                   </div>
 
-                  {/* ================= DIVIDER ================= */}
+                  {/* DIVIDER  */}
 
                   <div className="my-5 h-px bg-[#ead0d0]" />
 
-                  {/* ================= ORDERED TOOLS ================= */}
+                  {/* ORDERED TOOLS  */}
 
                   <div>
                     <div className="mb-4">
@@ -930,7 +770,7 @@ export default function RecentOrders({
                     </div>
                   </div>
 
-                  {/* ================= MESSAGE ================= */}
+                  {/* MESSAGE  */}
 
                   {order.message && (
                     <>
@@ -948,18 +788,16 @@ export default function RecentOrders({
                     </>
                   )}
 
-                  {/* ================= ACTION ================= */}
+                  {/* ACTION  */}
 
                   <div className="mt-auto space-y-3 pt-5">
-                    {/* ==================================================
-                        PAYMENT
-                        ================================================== */}
+                    {/* PAYMENT */}
 
                     {activeTab === "visible" &&
                       order.status === "approved" &&
                       displayStatus !== "completed" && (
                         <>
-                          {/* ================= UNPAID ================= */}
+                          {/* UNPAID */}
 
                           {currentPaymentStatus === "unpaid" && (
                             <button
@@ -1007,7 +845,7 @@ export default function RecentOrders({
                             </button>
                           )}
 
-                          {/* ================= PAID ================= */}
+                          {/* PAID  */}
 
                           {currentPaymentStatus === "paid" && (
                             <button
@@ -1030,7 +868,7 @@ export default function RecentOrders({
                             </button>
                           )}
 
-                          {/* ================= CANCELLED ================= */}
+                          {/* CANCELLED  */}
 
                           {currentPaymentStatus === "cancelled" && (
                             <button
@@ -1055,7 +893,7 @@ export default function RecentOrders({
                         </>
                       )}
 
-                    {/* ================= HIDE / SHOW ================= */}
+                    {/*HIDE / SHOW */}
 
                     {activeTab === "visible" ? (
                       <button
