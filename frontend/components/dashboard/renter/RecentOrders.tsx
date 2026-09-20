@@ -205,7 +205,6 @@ function savePaymentStatuses(statuses: Record<number, PaymentStatus>) {
   }
 }
 
-// MAIN COMPONENT
 export default function RecentOrders({
   orders,
   onPaymentStatusChange,
@@ -219,10 +218,6 @@ export default function RecentOrders({
   const [paymentStatuses, setPaymentStatuses] = useState<
     Record<number, PaymentStatus>
   >({});
-
-  // --------------------------------------------------
-  // LOAD HIDDEN ORDERS
-  // --------------------------------------------------
 
   useEffect(() => {
     const savedHiddenOrders = localStorage.getItem("renter_hidden_orders");
@@ -240,10 +235,6 @@ export default function RecentOrders({
     }
   }, []);
 
-  // --------------------------------------------------
-  // INITIALIZE PAYMENT STATUS
-  // --------------------------------------------------
-
   useEffect(() => {
     setPaymentStatuses((currentStatuses) => {
       const savedStatuses = getSavedPaymentStatuses();
@@ -255,10 +246,6 @@ export default function RecentOrders({
 
       orders.forEach((order) => {
         const backendStatus = order.payment_status || "unpaid";
-
-        /*
-         * BACKEND PAID ALWAYS WINS
-         */
         if (backendStatus === "paid") {
           updatedStatuses[order.id] = "paid";
           return;
@@ -272,18 +259,10 @@ export default function RecentOrders({
           return;
         }
 
-        /*
-         * If local status is paid,
-         * don't downgrade it.
-         */
         if (updatedStatuses[order.id] === "paid") {
           return;
         }
 
-        /*
-         * If local status is cancelled,
-         * keep cancelled until a new payment starts.
-         */
         if (updatedStatuses[order.id] === "cancelled") {
           return;
         }
@@ -297,10 +276,8 @@ export default function RecentOrders({
     });
   }, [orders]);
 
-  // --------------------------------------------------
-  // CHECK PAYMENT STATUS FROM BACKEND
-  // --------------------------------------------------
 
+  // CHECK PAYMENT STATUS FROM BACKEND
   const checkPaymentStatus = async (orderId: number) => {
     try {
       const token = localStorage.getItem("access_token");
@@ -336,12 +313,6 @@ export default function RecentOrders({
         return;
       }
 
-      /*
-       * PAYMENT FINISHED
-       *
-       * Remove payment_order_id after
-       * paid/cancelled.
-       */
       if (
         data.payment_status === "paid" ||
         data.payment_status === "cancelled"
@@ -356,17 +327,10 @@ export default function RecentOrders({
       setPaymentStatuses((currentStatuses) => {
         const existingStatus = currentStatuses[orderId];
 
-        /*
-         * NEVER change PAID back to anything else.
-         */
         if (existingStatus === "paid" && data.payment_status !== "paid") {
           return currentStatuses;
         }
 
-        /*
-         * Keep cancelled until user starts
-         * a new payment.
-         */
         if (
           existingStatus === "cancelled" &&
           data.payment_status === "unpaid"
@@ -393,10 +357,8 @@ export default function RecentOrders({
     }
   };
 
-  // --------------------------------------------------
-  // CHECK PAYMENT AFTER STRIPE REDIRECT
-  // --------------------------------------------------
 
+  // CHECK PAYMENT AFTER STRIPE REDIRECT
   useEffect(() => {
     const paymentOrderId = localStorage.getItem("payment_order_id");
 
@@ -433,24 +395,13 @@ export default function RecentOrders({
     };
   }, []);
 
-  // --------------------------------------------------
-  // CONTINUOUS PAYMENT STATUS CHECK
-  // --------------------------------------------------
 
+  // CONTINUOUS PAYMENT STATUS CHECK
   useEffect(() => {
     const ordersToCheck = orders.filter((order) => {
       const currentStatus =
         paymentStatuses[order.id] || order.payment_status || "unpaid";
 
-      /*
-       * Check approved orders
-       * AND active orders.
-       *
-       * This is important because after successful
-       * Stripe payment the backend changes:
-       *
-       * approved -> active
-       */
       return (
         (order.status === "approved" || order.status === "active") &&
         currentStatus !== "paid"
@@ -472,10 +423,8 @@ export default function RecentOrders({
     };
   }, [orders, paymentStatuses]);
 
-  // --------------------------------------------------
-  // HIDE ORDER
-  // --------------------------------------------------
 
+  // HIDE ORDER
   const hideOrder = (orderId: number) => {
     const updatedIds = hiddenOrderIds.includes(orderId)
       ? hiddenOrderIds
@@ -488,10 +437,8 @@ export default function RecentOrders({
     toast.success("Order hidden successfully");
   };
 
-  // --------------------------------------------------
-  // SHOW ORDER
-  // --------------------------------------------------
 
+  // SHOW ORDER
   const showOrder = (orderId: number) => {
     const updatedIds = hiddenOrderIds.filter((id) => id !== orderId);
 
@@ -502,21 +449,13 @@ export default function RecentOrders({
     toast.success("Order is visible again");
   };
 
-  // --------------------------------------------------
-  // HANDLE STRIPE PAYMENT
-  // --------------------------------------------------
 
+  // HANDLE STRIPE PAYMENT
   const handlePayment = async (orderId: number) => {
     try {
       setPaymentLoadingId(orderId);
 
       const token = localStorage.getItem("access_token");
-
-      /*
-       * IMPORTANT:
-       * If payment was cancelled,
-       * allow a fresh payment attempt.
-       */
       setPaymentStatuses((currentStatuses) => {
         const updatedStatuses = {
           ...currentStatuses,
@@ -528,9 +467,6 @@ export default function RecentOrders({
         return updatedStatuses;
       });
 
-      /*
-       * Save order id for success/cancel page.
-       */
       localStorage.setItem("payment_order_id", String(orderId));
 
       const response = await fetch(
@@ -560,18 +496,14 @@ export default function RecentOrders({
         throw new Error(data?.message || "Payment creation failed");
       }
 
-      /*
-       * Backend returns checkout_url
-       */
+  
       if (data?.checkout_url) {
         window.location.href = data.checkout_url;
 
         return;
       }
 
-      /*
-       * Fallback
-       */
+  
       if (data?.url) {
         window.location.href = data.url;
 
@@ -584,10 +516,6 @@ export default function RecentOrders({
 
       setPaymentLoadingId(null);
 
-      /*
-       * Remove payment_order_id if
-       * payment creation itself failed.
-       */
       localStorage.removeItem("payment_order_id");
 
       toast.error(
@@ -596,10 +524,8 @@ export default function RecentOrders({
     }
   };
 
-  // --------------------------------------------------
-  // VISIBLE / HIDDEN ORDERS
-  // --------------------------------------------------
 
+  // VISIBLE / HIDDEN ORDERS
   const visibleOrders = orders.filter(
     (order) => !hiddenOrderIds.includes(order.id),
   );
@@ -611,10 +537,6 @@ export default function RecentOrders({
   const currentOrders = activeTab === "visible" ? visibleOrders : hiddenOrders;
 
   const recentOrders = currentOrders.slice(0, 5);
-
-  // --------------------------------------------------
-  // UI
-  // --------------------------------------------------
 
   return (
     <section className="mt-8 space-y-6">
@@ -700,35 +622,18 @@ export default function RecentOrders({
 
             const isPaymentLoading = paymentLoadingId === order.id;
 
-            /*
-             * Payment button should be available
-             * for approved orders.
-             *
-             * Active order can show PAID,
-             * but should NOT show Pay button.
-             */
             const canShowPaymentArea =
               activeTab === "visible" &&
               (order.status === "approved" || order.status === "active") &&
               displayStatus !== "completed";
 
-            /*
-             * Pay button only for APPROVED order
-             * and unpaid/cancelled payment.
-             */
             const canPay =
               activeTab === "visible" &&
               order.status === "approved" &&
               displayStatus !== "completed" &&
               (currentPaymentStatus === "unpaid" ||
                 currentPaymentStatus === "cancelled");
-
-            /*
-             * PAID can be shown for both:
-             *
-             * approved + paid
-             * active + paid
-             */
+                
             const isPaid = currentPaymentStatus === "paid";
 
             return (
