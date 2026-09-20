@@ -552,57 +552,10 @@ export default function RecentOrders({
   };
 
   // ======================================================
-  // UPDATE ORDER STATUS
-  //
-  // PAYMENT SUCCESS
-  // => COMPLETED
-  //
-  // RENTAL END
-  // => ACTIVE
-  // ======================================================
-
-  const displayOrders = orders.map((order) => {
-    const currentPaymentStatus =
-      paymentStatuses[order.id] || order.payment_status || "unpaid";
-
-    let displayStatus = order.status;
-
-    // Payment successful => COMPLETED
-    if (currentPaymentStatus === "paid") {
-      displayStatus = "completed";
-    }
-
-    // Rental finished => ACTIVE
-    const today = new Date();
-    const endDate = new Date(order.end_date);
-
-    if (currentPaymentStatus === "paid" && today > endDate) {
-      displayStatus = "active";
-    }
-
-    return {
-      ...order,
-      status: displayStatus,
-    };
-  });
-
-  // ======================================================
-  // ACTIVE & COMPLETED COUNT
-  // ======================================================
-
-  const activeCount = displayOrders.filter(
-    (order) => order.status === "active",
-  ).length;
-
-  const completedCount = displayOrders.filter(
-    (order) => order.status === "completed",
-  ).length;
-
-  // ======================================================
   // VISIBLE ORDERS
   // ======================================================
 
-  const visibleOrders = displayOrders.filter(
+  const visibleOrders = orders.filter(
     (order) => !hiddenOrderIds.includes(order.id),
   );
 
@@ -610,7 +563,7 @@ export default function RecentOrders({
   // HIDDEN ORDERS
   // ======================================================
 
-  const hiddenOrders = displayOrders.filter((order) =>
+  const hiddenOrders = orders.filter((order) =>
     hiddenOrderIds.includes(order.id),
   );
 
@@ -620,6 +573,10 @@ export default function RecentOrders({
 
   const currentOrders = activeTab === "visible" ? visibleOrders : hiddenOrders;
 
+  // ======================================================
+  // SHOW ONLY LATEST 5 ORDERS
+  // ======================================================
+
   const recentOrders = currentOrders.slice(0, 5);
 
   // ======================================================
@@ -628,56 +585,6 @@ export default function RecentOrders({
 
   return (
     <section className="mt-8 space-y-6">
-      {/* ================= ORDER SUMMARY ================= */}
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* ACTIVE */}
-
-        <div className="rounded-2xl border border-[#b9d8bf] bg-[#f4fbf5] p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[#5d7562]">
-                Active Rentals
-              </p>
-
-              <p className="mt-1 text-3xl font-bold text-[#2f6b3a]">
-                {activeCount}
-              </p>
-
-              <p className="mt-1 text-xs text-[#718276]">
-                Rental period completed
-              </p>
-            </div>
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e4f3e7]">
-              <Package className="h-6 w-6 text-[#2f6b3a]" />
-            </div>
-          </div>
-        </div>
-
-        {/* COMPLETED */}
-
-        <div className="rounded-2xl border border-[#d8c8e3] bg-[#faf7fc] p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[#74627e]">
-                Completed Rentals
-              </p>
-
-              <p className="mt-1 text-3xl font-bold text-[#68477f]">
-                {completedCount}
-              </p>
-
-              <p className="mt-1 text-xs text-[#81758a]">Payment completed</p>
-            </div>
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#eee5f5]">
-              <CalendarDays className="h-6 w-6 text-[#68477f]" />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* ================= TABS ================= */}
 
       <div className="flex items-center gap-2 rounded-xl border border-[#e4bcbc] bg-[#fff7f7] p-1">
@@ -861,16 +768,16 @@ export default function RecentOrders({
                         <div
                           key={tool.id}
                           className="
-                              flex items-center gap-3
-                              rounded-xl
-                              border border-[#e8caca]
-                              bg-[#fffafa]
-                              p-3
-                              shadow-sm
-                              transition-all duration-300
-                              hover:border-[#dba8a8]
-                              hover:bg-[#fff5f5]
-                            "
+                            flex items-center gap-3
+                            rounded-xl
+                            border border-[#e8caca]
+                            bg-[#fffafa]
+                            p-3
+                            shadow-sm
+                            transition-all duration-300
+                            hover:border-[#dba8a8]
+                            hover:bg-[#fff5f5]
+                          "
                         >
                           {/* TOOL IMAGE */}
 
