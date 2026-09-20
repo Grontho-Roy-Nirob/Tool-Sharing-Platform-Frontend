@@ -104,14 +104,17 @@ function isRentalCompleted(endDate: string) {
 
 // GET DISPLAY STATUS
 function getDisplayStatus(order: RenterOrder): OrderStatus {
+  // Already completed
   if (order.status === "completed") {
     return "completed";
   }
 
+  // Active rental becomes completed only after end date
   if (order.status === "active" && isRentalCompleted(order.end_date)) {
     return "completed";
   }
 
+  // Keep active status before rental end date
   return order.status;
 }
 
@@ -208,14 +211,19 @@ export default function RecentOrders({
   onPaymentStatusChange,
 }: RecentOrdersProps) {
   const [hiddenOrderIds, setHiddenOrderIds] = useState<number[]>([]);
+
   const [activeTab, setActiveTab] = useState<"visible" | "hidden">("visible");
+
   const [paymentLoadingId, setPaymentLoadingId] = useState<number | null>(null);
 
   const [paymentStatuses, setPaymentStatuses] = useState<
     Record<number, PaymentStatus>
   >({});
 
+  // --------------------------------------------------
   // LOAD HIDDEN ORDERS
+  // --------------------------------------------------
+
   useEffect(() => {
     const savedHiddenOrders = localStorage.getItem("renter_hidden_orders");
 
@@ -232,7 +240,10 @@ export default function RecentOrders({
     }
   }, []);
 
+  // --------------------------------------------------
   // INITIALIZE PAYMENT STATUS
+  // --------------------------------------------------
+
   useEffect(() => {
     setPaymentStatuses((currentStatuses) => {
       const savedStatuses = getSavedPaymentStatuses();
@@ -245,20 +256,34 @@ export default function RecentOrders({
       orders.forEach((order) => {
         const backendStatus = order.payment_status || "unpaid";
 
+        /*
+         * BACKEND PAID ALWAYS WINS
+         */
         if (backendStatus === "paid") {
           updatedStatuses[order.id] = "paid";
           return;
         }
 
+        /*
+         * BACKEND CANCELLED
+         */
         if (backendStatus === "cancelled") {
           updatedStatuses[order.id] = "cancelled";
           return;
         }
 
+        /*
+         * If local status is paid,
+         * don't downgrade it.
+         */
         if (updatedStatuses[order.id] === "paid") {
           return;
         }
 
+        /*
+         * If local status is cancelled,
+         * keep cancelled until a new payment starts.
+         */
         if (updatedStatuses[order.id] === "cancelled") {
           return;
         }
@@ -272,7 +297,10 @@ export default function RecentOrders({
     });
   }, [orders]);
 
-  // CHECK PAYMENT STATUS
+  // --------------------------------------------------
+  // CHECK PAYMENT STATUS FROM BACKEND
+  // --------------------------------------------------
+
   const checkPaymentStatus = async (orderId: number) => {
     try {
       const token = localStorage.getItem("access_token");
@@ -308,7 +336,12 @@ export default function RecentOrders({
         return;
       }
 
-      // Remove payment_order_id after final payment state
+      /*
+       * PAYMENT FINISHED
+       *
+       * Remove payment_order_id after
+       * paid/cancelled.
+       */
       if (
         data.payment_status === "paid" ||
         data.payment_status === "cancelled"
@@ -323,12 +356,17 @@ export default function RecentOrders({
       setPaymentStatuses((currentStatuses) => {
         const existingStatus = currentStatuses[orderId];
 
-        // Never downgrade paid -> unpaid/cancelled
+        /*
+         * NEVER change PAID back to anything else.
+         */
         if (existingStatus === "paid" && data.payment_status !== "paid") {
           return currentStatuses;
         }
 
-        // Keep cancelled until a new payment attempt is made
+        /*
+         * Keep cancelled until user starts
+         * a new payment.
+         */
         if (
           existingStatus === "cancelled" &&
           data.payment_status === "unpaid"
@@ -355,7 +393,10 @@ export default function RecentOrders({
     }
   };
 
+  // --------------------------------------------------
   // CHECK PAYMENT AFTER STRIPE REDIRECT
+  // --------------------------------------------------
+
   useEffect(() => {
     const paymentOrderId = localStorage.getItem("payment_order_id");
 
@@ -392,21 +433,36 @@ export default function RecentOrders({
     };
   }, []);
 
+  // --------------------------------------------------
   // CONTINUOUS PAYMENT STATUS CHECK
+  // --------------------------------------------------
+
   useEffect(() => {
-    const approvedUnpaidOrders = orders.filter((order) => {
+    const ordersToCheck = orders.filter((order) => {
       const currentStatus =
         paymentStatuses[order.id] || order.payment_status || "unpaid";
 
-      return order.status === "approved" && currentStatus === "unpaid";
+      /*
+       * Check approved orders
+       * AND active orders.
+       *
+       * This is important because after successful
+       * Stripe payment the backend changes:
+       *
+       * approved -> active
+       */
+      return (
+        (order.status === "approved" || order.status === "active") &&
+        currentStatus !== "paid"
+      );
     });
 
-    if (approvedUnpaidOrders.length === 0) {
+    if (ordersToCheck.length === 0) {
       return;
     }
 
     const interval = setInterval(() => {
-      approvedUnpaidOrders.forEach((order) => {
+      ordersToCheck.forEach((order) => {
         checkPaymentStatus(order.id);
       });
     }, 3000);
@@ -416,7 +472,10 @@ export default function RecentOrders({
     };
   }, [orders, paymentStatuses]);
 
+  // --------------------------------------------------
   // HIDE ORDER
+  // --------------------------------------------------
+
   const hideOrder = (orderId: number) => {
     const updatedIds = hiddenOrderIds.includes(orderId)
       ? hiddenOrderIds
@@ -429,7 +488,10 @@ export default function RecentOrders({
     toast.success("Order hidden successfully");
   };
 
+  // --------------------------------------------------
   // SHOW ORDER
+  // --------------------------------------------------
+
   const showOrder = (orderId: number) => {
     const updatedIds = hiddenOrderIds.filter((id) => id !== orderId);
 
@@ -440,14 +502,35 @@ export default function RecentOrders({
     toast.success("Order is visible again");
   };
 
+  // --------------------------------------------------
   // HANDLE STRIPE PAYMENT
+  // --------------------------------------------------
+
   const handlePayment = async (orderId: number) => {
     try {
       setPaymentLoadingId(orderId);
 
       const token = localStorage.getItem("access_token");
 
-      // Save current order for success/cancel page
+      /*
+       * IMPORTANT:
+       * If payment was cancelled,
+       * allow a fresh payment attempt.
+       */
+      setPaymentStatuses((currentStatuses) => {
+        const updatedStatuses = {
+          ...currentStatuses,
+          [orderId]: "unpaid" as PaymentStatus,
+        };
+
+        savePaymentStatuses(updatedStatuses);
+
+        return updatedStatuses;
+      });
+
+      /*
+       * Save order id for success/cancel page.
+       */
       localStorage.setItem("payment_order_id", String(orderId));
 
       const response = await fetch(
@@ -477,15 +560,21 @@ export default function RecentOrders({
         throw new Error(data?.message || "Payment creation failed");
       }
 
-      // Stripe checkout URL
+      /*
+       * Backend returns checkout_url
+       */
       if (data?.checkout_url) {
         window.location.href = data.checkout_url;
+
         return;
       }
 
-      // Fallback if backend returns "url"
+      /*
+       * Fallback
+       */
       if (data?.url) {
         window.location.href = data.url;
+
         return;
       }
 
@@ -495,11 +584,21 @@ export default function RecentOrders({
 
       setPaymentLoadingId(null);
 
+      /*
+       * Remove payment_order_id if
+       * payment creation itself failed.
+       */
+      localStorage.removeItem("payment_order_id");
+
       toast.error(
         error instanceof Error ? error.message : "Unable to start payment",
       );
     }
   };
+
+  // --------------------------------------------------
+  // VISIBLE / HIDDEN ORDERS
+  // --------------------------------------------------
 
   const visibleOrders = orders.filter(
     (order) => !hiddenOrderIds.includes(order.id),
@@ -512,6 +611,10 @@ export default function RecentOrders({
   const currentOrders = activeTab === "visible" ? visibleOrders : hiddenOrders;
 
   const recentOrders = currentOrders.slice(0, 5);
+
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
 
   return (
     <section className="mt-8 space-y-6">
@@ -596,6 +699,37 @@ export default function RecentOrders({
             const displayStatus = getDisplayStatus(order);
 
             const isPaymentLoading = paymentLoadingId === order.id;
+
+            /*
+             * Payment button should be available
+             * for approved orders.
+             *
+             * Active order can show PAID,
+             * but should NOT show Pay button.
+             */
+            const canShowPaymentArea =
+              activeTab === "visible" &&
+              (order.status === "approved" || order.status === "active") &&
+              displayStatus !== "completed";
+
+            /*
+             * Pay button only for APPROVED order
+             * and unpaid/cancelled payment.
+             */
+            const canPay =
+              activeTab === "visible" &&
+              order.status === "approved" &&
+              displayStatus !== "completed" &&
+              (currentPaymentStatus === "unpaid" ||
+                currentPaymentStatus === "cancelled");
+
+            /*
+             * PAID can be shown for both:
+             *
+             * approved + paid
+             * active + paid
+             */
+            const isPaid = currentPaymentStatus === "paid";
 
             return (
               <article
@@ -700,16 +834,16 @@ export default function RecentOrders({
                         <div
                           key={tool.id}
                           className="
-                            flex items-center gap-3
-                            rounded-xl
-                            border border-[#e8caca]
-                            bg-[#fffafa]
-                            p-3
-                            shadow-sm
-                            transition-all duration-300
-                            hover:border-[#dba8a8]
-                            hover:bg-[#fff5f5]
-                          "
+                              flex items-center gap-3
+                              rounded-xl
+                              border border-[#e8caca]
+                              bg-[#fffafa]
+                              p-3
+                              shadow-sm
+                              transition-all duration-300
+                              hover:border-[#dba8a8]
+                              hover:bg-[#fff5f5]
+                            "
                         >
                           {/* TOOL IMAGE */}
 
@@ -787,18 +921,39 @@ export default function RecentOrders({
                   <div className="mt-auto space-y-3 pt-5">
                     {/* PAYMENT */}
 
-                    {activeTab === "visible" &&
-                      order.status === "approved" &&
-                      displayStatus !== "completed" && (
-                        <>
-                          {/* UNPAID */}
+                    {canShowPaymentArea && (
+                      <>
+                        {/* PAID */}
 
-                          {currentPaymentStatus === "unpaid" && (
-                            <button
-                              type="button"
-                              onClick={() => handlePayment(order.id)}
-                              disabled={isPaymentLoading}
-                              className="
+                        {isPaid && (
+                          <button
+                            type="button"
+                            disabled
+                            className="
+                              flex w-full cursor-not-allowed
+                              items-center justify-center gap-2
+                              rounded-xl
+                              border border-[#b9d8bf]
+                              bg-[#e4f3e7]
+                              px-4 py-3
+                              text-sm font-semibold
+                              text-[#2f6b3a]
+                              opacity-90
+                            "
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            PAID
+                          </button>
+                        )}
+
+                        {/* PAY WITH STRIPE */}
+
+                        {!isPaid && canPay && (
+                          <button
+                            type="button"
+                            onClick={() => handlePayment(order.id)}
+                            disabled={isPaymentLoading}
+                            className="
                                 group flex w-full items-center justify-center gap-2
                                 rounded-xl
                                 bg-[#635BFF]
@@ -811,106 +966,35 @@ export default function RecentOrders({
                                 disabled:cursor-not-allowed
                                 disabled:opacity-60
                               "
-                            >
-                              {isPaymentLoading ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                  Redirecting to Stripe...
-                                </>
-                              ) : (
-                                <>
-                                  <CreditCard
-                                    className="
+                          >
+                            {isPaymentLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Redirecting to Stripe...
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard
+                                  className="
                                       h-4 w-4
                                       transition-transform duration-300
                                       group-hover:scale-110
                                     "
-                                  />
-                                  Pay with Stripe
-                                  <ArrowRight
-                                    className="
+                                />
+                                Pay with Stripe
+                                <ArrowRight
+                                  className="
                                       h-4 w-4
                                       transition-transform duration-300
                                       group-hover:translate-x-1
                                     "
-                                  />
-                                </>
-                              )}
-                            </button>
-                          )}
-
-                          {/* PAID */}
-
-                          {currentPaymentStatus === "paid" && (
-                            <button
-                              type="button"
-                              disabled
-                              className="
-                                flex w-full cursor-not-allowed
-                                items-center justify-center gap-2
-                                rounded-xl
-                                border border-[#b9d8bf]
-                                bg-[#e4f3e7]
-                                px-4 py-3
-                                text-sm font-semibold
-                                text-[#2f6b3a]
-                                opacity-90
-                              "
-                            >
-                              <CreditCard className="h-4 w-4" />
-                              PAID
-                            </button>
-                          )}
-
-                          {/* CANCELLED - PAY AGAIN */}
-
-                          {currentPaymentStatus === "cancelled" && (
-                            <button
-                              type="button"
-                              onClick={() => handlePayment(order.id)}
-                              disabled={isPaymentLoading}
-                              className="
-                                group flex w-full items-center justify-center gap-2
-                                rounded-xl
-                                bg-[#635BFF]
-                                px-4 py-3
-                                text-sm font-semibold
-                                text-white
-                                transition-all duration-300
-                                hover:bg-[#5149d8]
-                                hover:shadow-[0_6px_18px_rgba(99,91,255,0.28)]
-                                disabled:cursor-not-allowed
-                                disabled:opacity-60
-                              "
-                            >
-                              {isPaymentLoading ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                  Redirecting to Stripe...
-                                </>
-                              ) : (
-                                <>
-                                  <CreditCard
-                                    className="
-                                      h-4 w-4
-                                      transition-transform duration-300
-                                      group-hover:scale-110
-                                    "
-                                  />
-                                  Pay with Stripe
-                                  <ArrowRight
-                                    className="
-                                      h-4 w-4
-                                      transition-transform duration-300
-                                      group-hover:translate-x-1
-                                    "
-                                  />
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </>
-                      )}
+                                />
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </>
+                    )}
 
                     {/* HIDE / SHOW */}
 
