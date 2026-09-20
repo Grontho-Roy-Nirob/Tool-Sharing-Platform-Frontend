@@ -94,6 +94,56 @@ function formatDate(date: string) {
 }
 
 // ======================================================
+// CHECK END DATE
+// ======================================================
+
+function isRentalCompleted(endDate: string) {
+  if (!endDate) {
+    return false;
+  }
+
+  const today = new Date();
+  const rentalEndDate = new Date(endDate);
+
+  // Compare only date, not exact time
+  today.setHours(0, 0, 0, 0);
+  rentalEndDate.setHours(0, 0, 0, 0);
+
+  return today > rentalEndDate;
+}
+
+// ======================================================
+// GET DISPLAY STATUS
+// ======================================================
+
+function getDisplayStatus(order: RenterOrder): OrderStatus {
+  // ====================================================
+  // BACKEND COMPLETED
+  // ====================================================
+
+  if (order.status === "completed") {
+    return "completed";
+  }
+
+  // ====================================================
+  // END DATE PASSED
+  //
+  // If rental end date has already passed,
+  // show COMPLETED in UI.
+  // ====================================================
+
+  if (order.status === "active" && isRentalCompleted(order.end_date)) {
+    return "completed";
+  }
+
+  // ====================================================
+  // OTHERWISE USE BACKEND STATUS
+  // ====================================================
+
+  return order.status;
+}
+
+// ======================================================
 // STATUS BADGE
 // ======================================================
 
@@ -247,6 +297,8 @@ export default function RecentOrders({
 
   // ======================================================
   // INITIALIZE PAYMENT STATUS
+  //
+  // BACKEND IS THE MAIN SOURCE
   // ======================================================
 
   useEffect(() => {
@@ -261,29 +313,44 @@ export default function RecentOrders({
       orders.forEach((order) => {
         const backendStatus = order.payment_status || "unpaid";
 
-        // Backend says PAID
+        // ================================================
+        // BACKEND PAID
+        // ================================================
+
         if (backendStatus === "paid") {
           updatedStatuses[order.id] = "paid";
           return;
         }
 
-        // Backend says CANCELLED
+        // ================================================
+        // BACKEND CANCELLED
+        // ================================================
+
         if (backendStatus === "cancelled") {
           updatedStatuses[order.id] = "cancelled";
           return;
         }
 
-        // Existing local PAID
+        // ================================================
+        // EXISTING LOCAL PAID
+        // ================================================
+
         if (updatedStatuses[order.id] === "paid") {
           return;
         }
 
-        // Existing local CANCELLED
+        // ================================================
+        // EXISTING LOCAL CANCELLED
+        // ================================================
+
         if (updatedStatuses[order.id] === "cancelled") {
           return;
         }
 
-        // Otherwise UNPAID
+        // ================================================
+        // OTHERWISE UNPAID
+        // ================================================
+
         updatedStatuses[order.id] = "unpaid";
       });
 
@@ -352,18 +419,24 @@ export default function RecentOrders({
       }
 
       // ====================================================
-      // UPDATE PAYMENT STATUS
+      // UPDATE STATUS
       // ====================================================
 
       setPaymentStatuses((currentStatuses) => {
         const existingStatus = currentStatuses[orderId];
 
-        // Never change PAID
+        // ================================================
+        // NEVER CHANGE PAID
+        // ================================================
+
         if (existingStatus === "paid" && data.payment_status !== "paid") {
           return currentStatuses;
         }
 
-        // Never change CANCELLED to UNPAID
+        // ================================================
+        // NEVER CHANGE CANCELLED TO UNPAID
+        // ================================================
+
         if (
           existingStatus === "cancelled" &&
           data.payment_status === "unpaid"
@@ -415,6 +488,10 @@ export default function RecentOrders({
       attempts++;
 
       await checkPaymentStatus(orderId);
+
+      // ==================================================
+      // Stripe webhook may need some time
+      // ==================================================
 
       if (attempts < 15) {
         timeoutId = setTimeout(checkStatus, 2000);
@@ -497,7 +574,10 @@ export default function RecentOrders({
 
       const token = localStorage.getItem("access_token");
 
+      // ================================================
       // Save current order
+      // ================================================
+
       localStorage.setItem("payment_order_id", String(orderId));
 
       const response = await fetch(
@@ -527,13 +607,19 @@ export default function RecentOrders({
         throw new Error(data?.message || "Payment creation failed");
       }
 
-      // Stripe checkout URL
+      // ==================================================
+      // STRIPE CHECKOUT URL
+      // ==================================================
+
       if (data?.url) {
         window.location.href = data.url;
         return;
       }
 
-      // Alternative checkout URL
+      // ==================================================
+      // ALTERNATIVE CHECKOUT URL
+      // ==================================================
+
       if (data?.checkout_url) {
         window.location.href = data.checkout_url;
         return;
@@ -572,10 +658,6 @@ export default function RecentOrders({
   // ======================================================
 
   const currentOrders = activeTab === "visible" ? visibleOrders : hiddenOrders;
-
-  // ======================================================
-  // SHOW ONLY LATEST 5 ORDERS
-  // ======================================================
 
   const recentOrders = currentOrders.slice(0, 5);
 
@@ -660,8 +742,24 @@ export default function RecentOrders({
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           {recentOrders.map((order) => {
+            // ==================================================
+            // CURRENT PAYMENT STATUS
+            // ==================================================
+
             const currentPaymentStatus =
               paymentStatuses[order.id] || order.payment_status || "unpaid";
+
+            // ==================================================
+            // DISPLAY STATUS
+            //
+            // Payment successful:
+            // backend changes approved -> active
+            //
+            // End date passed:
+            // active -> completed in UI
+            // ==================================================
+
+            const displayStatus = getDisplayStatus(order);
 
             const isPaymentLoading = paymentLoadingId === order.id;
 
@@ -689,7 +787,7 @@ export default function RecentOrders({
                           Order #{order.id}
                         </h3>
 
-                        <StatusBadge status={order.status} />
+                        <StatusBadge status={displayStatus} />
                       </div>
 
                       <p className="mt-1 text-xs text-[#8b6666]">
@@ -768,16 +866,16 @@ export default function RecentOrders({
                         <div
                           key={tool.id}
                           className="
-                            flex items-center gap-3
-                            rounded-xl
-                            border border-[#e8caca]
-                            bg-[#fffafa]
-                            p-3
-                            shadow-sm
-                            transition-all duration-300
-                            hover:border-[#dba8a8]
-                            hover:bg-[#fff5f5]
-                          "
+                              flex items-center gap-3
+                              rounded-xl
+                              border border-[#e8caca]
+                              bg-[#fffafa]
+                              p-3
+                              shadow-sm
+                              transition-all duration-300
+                              hover:border-[#dba8a8]
+                              hover:bg-[#fff5f5]
+                            "
                         >
                           {/* TOOL IMAGE */}
 
@@ -853,18 +951,22 @@ export default function RecentOrders({
                   {/* ================= ACTION ================= */}
 
                   <div className="mt-auto space-y-3 pt-5">
-                    {/* ================= PAYMENT ================= */}
+                    {/* ==================================================
+                        PAYMENT
+                        ================================================== */}
 
-                    {activeTab === "visible" && order.status === "approved" && (
-                      <>
-                        {/* UNPAID */}
+                    {activeTab === "visible" &&
+                      order.status === "approved" &&
+                      displayStatus !== "completed" && (
+                        <>
+                          {/* ================= UNPAID ================= */}
 
-                        {currentPaymentStatus === "unpaid" && (
-                          <button
-                            type="button"
-                            onClick={() => handlePayment(order.id)}
-                            disabled={isPaymentLoading}
-                            className="
+                          {currentPaymentStatus === "unpaid" && (
+                            <button
+                              type="button"
+                              onClick={() => handlePayment(order.id)}
+                              disabled={isPaymentLoading}
+                              className="
                                 group flex w-full items-center justify-center gap-2
                                 rounded-xl
                                 bg-[#635BFF]
@@ -877,29 +979,41 @@ export default function RecentOrders({
                                 disabled:cursor-not-allowed
                                 disabled:opacity-60
                               "
-                          >
-                            {isPaymentLoading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Redirecting to Stripe...
-                              </>
-                            ) : (
-                              <>
-                                <CreditCard className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                                Pay with Stripe
-                                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                              </>
-                            )}
-                          </button>
-                        )}
+                            >
+                              {isPaymentLoading ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Redirecting to Stripe...
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard
+                                    className="
+                                      h-4 w-4
+                                      transition-transform duration-300
+                                      group-hover:scale-110
+                                    "
+                                  />
+                                  Pay with Stripe
+                                  <ArrowRight
+                                    className="
+                                      h-4 w-4
+                                      transition-transform duration-300
+                                      group-hover:translate-x-1
+                                    "
+                                  />
+                                </>
+                              )}
+                            </button>
+                          )}
 
-                        {/* PAID */}
+                          {/* ================= PAID ================= */}
 
-                        {currentPaymentStatus === "paid" && (
-                          <button
-                            type="button"
-                            disabled
-                            className="
+                          {currentPaymentStatus === "paid" && (
+                            <button
+                              type="button"
+                              disabled
+                              className="
                                 flex w-full cursor-not-allowed
                                 items-center justify-center gap-2
                                 rounded-xl
@@ -910,19 +1024,19 @@ export default function RecentOrders({
                                 text-[#2f6b3a]
                                 opacity-90
                               "
-                          >
-                            <CreditCard className="h-4 w-4" />
-                            PAID
-                          </button>
-                        )}
+                            >
+                              <CreditCard className="h-4 w-4" />
+                              PAID
+                            </button>
+                          )}
 
-                        {/* CANCELLED */}
+                          {/* ================= CANCELLED ================= */}
 
-                        {currentPaymentStatus === "cancelled" && (
-                          <button
-                            type="button"
-                            disabled
-                            className="
+                          {currentPaymentStatus === "cancelled" && (
+                            <button
+                              type="button"
+                              disabled
+                              className="
                                 flex w-full cursor-not-allowed
                                 items-center justify-center gap-2
                                 rounded-xl
@@ -933,13 +1047,13 @@ export default function RecentOrders({
                                 text-[#A82020]
                                 opacity-90
                               "
-                          >
-                            <EyeOff className="h-4 w-4" />
-                            CANCELLED
-                          </button>
-                        )}
-                      </>
-                    )}
+                            >
+                              <EyeOff className="h-4 w-4" />
+                              CANCELLED
+                            </button>
+                          )}
+                        </>
+                      )}
 
                     {/* ================= HIDE / SHOW ================= */}
 
@@ -962,7 +1076,13 @@ export default function RecentOrders({
                           hover:shadow-[0_6px_18px_rgba(168,32,32,0.22)]
                         "
                       >
-                        <EyeOff className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+                        <EyeOff
+                          className="
+                            h-4 w-4
+                            transition-transform duration-300
+                            group-hover:scale-110
+                          "
+                        />
                         Hide Order
                       </button>
                     ) : (
