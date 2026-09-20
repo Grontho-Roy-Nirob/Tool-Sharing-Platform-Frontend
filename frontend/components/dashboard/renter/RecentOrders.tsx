@@ -1,309 +1,294 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  CheckCircle2,
-  CreditCard,
-  Home,
-  PackageCheck,
   ArrowRight,
-  Loader2,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Eye,
+  MapPin,
+  Package,
+  XCircle,
 } from "lucide-react";
-import api from "@/lib/axios";
 
-interface PaymentStatusResponse {
-  payment_status: "unpaid" | "paid" | "cancelled";
+export type OrderStatus =
+  | "pending"
+  | "approved"
+  | "active"
+  | "completed"
+  | "rejected";
+
+export interface RenterOrder {
+  id: number;
+  order_id?: number;
+  tools?: any[];
+  tool_name?: string;
+  start_date?: string;
+  end_date?: string;
+  duration_days?: number;
+  total_amount?: number | string;
+  total?: number | string;
+  status: OrderStatus | string;
+  message?: string;
+  location?: string;
+  payment_status?: "unpaid" | "paid" | "cancelled";
 }
 
-export default function PaymentSuccess() {
-  const [paymentStatus, setPaymentStatus] = useState<
-    "unpaid" | "paid" | "cancelled" | null
-  >(null);
+interface RecentOrdersProps {
+  orders: RenterOrder[];
+}
 
-  const [loading, setLoading] = useState(true);
+export default function RecentOrders({ orders }: RecentOrdersProps) {
+  const getStatusConfig = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return {
+          label: "Approved",
+          icon: CheckCircle2,
+          className: "bg-[#fff3df] text-[#b87516]",
+        };
 
-  useEffect(() => {
-    const checkPaymentStatus = async () => {
-      try {
-        // First try to get order ID from URL
-        const params = new URLSearchParams(window.location.search);
+      case "active":
+        return {
+          label: "Active",
+          icon: CheckCircle2,
+          className: "bg-[#eaf4ec] text-[#356b3e]",
+        };
 
-        const urlOrderId = params.get("order_id");
+      case "completed":
+        return {
+          label: "Completed",
+          icon: CheckCircle2,
+          className: "bg-[#eaf4ec] text-[#356b3e]",
+        };
 
-        // If URL doesn't have order ID, use localStorage
-        const storedOrderId = localStorage.getItem("payment_order_id");
+      case "rejected":
+        return {
+          label: "Rejected",
+          icon: XCircle,
+          className: "bg-[#fdf0eb] text-[#C1502E]",
+        };
 
-        const orderId = urlOrderId || storedOrderId;
+      default:
+        return {
+          label: "Pending",
+          icon: Clock,
+          className: "bg-[#f5f3ef] text-[#6b6258]",
+        };
+    }
+  };
 
-        if (!orderId) {
-          setPaymentStatus("unpaid");
-          return;
-        }
+  const formatDate = (date?: string) => {
+    if (!date) return "N/A";
 
-        // Save order ID for future use
-        localStorage.setItem("payment_order_id", orderId);
+    try {
+      return new Date(date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return date;
+    }
+  };
 
-        /*
-         * Stripe redirects to this page immediately after payment.
-         * The webhook may need a little time to update the database.
-         *
-         * So we check the payment status several times.
-         */
-        const maxAttempts = 6;
-        const delay = 2000;
-
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          try {
-            const response = await api.get<PaymentStatusResponse>(
-              `/payment/status/${orderId}`,
-            );
-
-            const status = response.data.payment_status;
-
-            setPaymentStatus(status);
-
-            // Payment is completed
-            if (status === "paid") {
-              return;
-            }
-
-            // Payment was cancelled
-            if (status === "cancelled") {
-              return;
-            }
-
-            // Still unpaid - wait before checking again
-            if (attempt < maxAttempts - 1) {
-              await new Promise((resolve) => setTimeout(resolve, delay));
-            }
-          } catch (error) {
-            console.error("Payment status check failed:", error);
-
-            if (attempt < maxAttempts - 1) {
-              await new Promise((resolve) => setTimeout(resolve, delay));
-            }
-          }
-        }
-
-        // If webhook has not updated yet, keep unpaid state
-        setPaymentStatus((current) => current || "unpaid");
-      } catch (error) {
-        console.error("Failed to check payment status:", error);
-        setPaymentStatus("unpaid");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkPaymentStatus();
-  }, []);
-
-  // ==========================================
-  // LOADING
-  // ==========================================
-
-  if (loading) {
+  if (!orders || orders.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f3ef] px-4">
-        <div className="flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-lg">
-          <Loader2 className="h-5 w-5 animate-spin text-[#E8A33D]" />
-
-          <span className="text-sm font-medium text-[#292722]">
-            Checking payment status...
-          </span>
+      <div className="rounded-3xl bg-white p-8 text-center shadow-[0_10px_35px_rgba(41,39,34,0.06)]">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f5f3ef]">
+          <Package className="h-7 w-7 text-[#E8A33D]" />
         </div>
+
+        <h3 className="mt-4 text-lg font-bold text-[#292722]">
+          No Recent Orders
+        </h3>
+
+        <p className="mt-2 text-sm text-gray-500">
+          You have not placed any rental orders yet.
+        </p>
+
+        <Link
+          href="/tools"
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#E8A33D] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#d9952f]"
+        >
+          Browse Tools
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
     );
   }
-
-  // ==========================================
-  // CANCELLED
-  // ==========================================
-
-  if (paymentStatus === "cancelled") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f3ef] px-4 py-10">
-        <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center shadow-xl">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#C1502E]">
-            <CheckCircle2 className="h-11 w-11 text-white" />
-          </div>
-
-          <h1 className="mt-6 text-3xl font-bold text-[#292722]">
-            Payment Cancelled
-          </h1>
-
-          <p className="mt-3 text-sm text-gray-600">
-            Your payment was cancelled.
-          </p>
-
-          <Link
-            href="/renter/orders"
-            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#E8A33D] px-6 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#d9952f]"
-          >
-            <PackageCheck className="h-4 w-4" />
-            Back to Orders
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // PAYMENT NOT COMPLETED
-  // ==========================================
-
-  if (paymentStatus !== "paid") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f3ef] px-4 py-10">
-        <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center shadow-xl">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#f1ede6]">
-            <CreditCard className="h-10 w-10 text-[#E8A33D]" />
-          </div>
-
-          <h1 className="mt-6 text-3xl font-bold text-[#292722]">
-            Payment Not Completed
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 text-gray-600">
-            Your payment has not been completed yet. You can return to your
-            orders and try the payment again.
-          </p>
-
-          <Link
-            href="/renter/orders"
-            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#E8A33D] px-6 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#d9952f]"
-          >
-            <PackageCheck className="h-4 w-4" />
-            Back to Orders
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // PAID
-  // ==========================================
 
   return (
-    <div className="min-h-screen bg-[#f5f3ef] px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[80vh] max-w-2xl items-center justify-center">
-        <div className="w-full overflow-hidden rounded-3xl bg-white shadow-[0_20px_60px_rgba(41,39,34,0.10)]">
-          {/* HEADER */}
+    <div className="space-y-4">
+      {orders.map((order) => {
+        const statusConfig = getStatusConfig(order.status);
+        const StatusIcon = statusConfig.icon;
 
-          <div className="bg-[#292722] px-6 py-10 text-center sm:px-10">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#E8A33D] shadow-lg">
-              <CheckCircle2
-                className="h-11 w-11 text-white"
-                strokeWidth={2.5}
-              />
-            </div>
+        const orderId = order.order_id ?? order.id;
 
-            <h1 className="mt-6 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Payment Successful!
-            </h1>
+        const toolName =
+          order.tool_name || order.tools?.[0]?.tool_name || "Tool Rental";
 
-            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/70 sm:text-base">
-              Your payment has been completed successfully. Your rental order
-              has been recorded.
-            </p>
-          </div>
+        const total = order.total_amount ?? order.total ?? 0;
 
-          {/* BODY */}
+        const isPaid = order.payment_status === "paid";
 
-          <div className="px-6 py-8 sm:px-10">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {/* PAYMENT */}
+        return (
+          <div
+            key={order.id}
+            className="rounded-2xl border border-[#eee9e1] bg-white p-5 shadow-[0_8px_25px_rgba(41,39,34,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(41,39,34,0.08)]"
+          >
+            {/* TOP */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f5f3ef]">
+                  <Package className="h-5 w-5 text-[#E8A33D]" />
+                </div>
 
-              <div className="rounded-2xl border border-[#eee9e1] bg-[#faf9f7] p-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fff3df]">
-                    <CreditCard className="h-5 w-5 text-[#E8A33D]" />
-                  </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Order #{orderId}
+                  </p>
 
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                      Payment
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-[#356b3e]">
-                      PAID
-                    </p>
-                  </div>
+                  <h3 className="mt-1 text-base font-bold text-[#292722]">
+                    {toolName}
+                  </h3>
                 </div>
               </div>
 
-              {/* ORDER */}
-
-              <div className="rounded-2xl border border-[#eee9e1] bg-[#faf9f7] p-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fdf0eb]">
-                    <PackageCheck className="h-5 w-5 text-[#C1502E]" />
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                      Order
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-[#292722]">
-                      Payment Received
-                    </p>
-                  </div>
-                </div>
+              <div
+                className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${statusConfig.className}`}
+              >
+                <StatusIcon className="h-3.5 w-3.5" />
+                {statusConfig.label}
               </div>
             </div>
 
-            {/* INFO */}
+            {/* DETAILS */}
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl bg-[#faf9f7] p-3">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <CalendarDays className="h-4 w-4" />
 
-            <div className="mt-6 rounded-2xl bg-[#f5f3ef] p-5">
-              <p className="text-sm leading-6 text-gray-600">
-                Thank you for using ToolShare. Your payment information has been
-                securely processed through Stripe. You can now return to your
-                orders and check your rental details.
-              </p>
+                  <span className="text-xs font-medium">Start Date</span>
+                </div>
+
+                <p className="mt-1 text-sm font-semibold text-[#292722]">
+                  {formatDate(order.start_date)}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-[#faf9f7] p-3">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <CalendarDays className="h-4 w-4" />
+
+                  <span className="text-xs font-medium">End Date</span>
+                </div>
+
+                <p className="mt-1 text-sm font-semibold text-[#292722]">
+                  {formatDate(order.end_date)}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-[#faf9f7] p-3">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Clock className="h-4 w-4" />
+
+                  <span className="text-xs font-medium">Duration</span>
+                </div>
+
+                <p className="mt-1 text-sm font-semibold text-[#292722]">
+                  {order.duration_days
+                    ? `${order.duration_days} day${
+                        order.duration_days > 1 ? "s" : ""
+                      }`
+                    : "N/A"}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-[#faf9f7] p-3">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <CreditCard className="h-4 w-4" />
+
+                  <span className="text-xs font-medium">Total</span>
+                </div>
+
+                <p className="mt-1 text-sm font-bold text-[#292722]">
+                  ৳{Number(total).toFixed(2)}
+                </p>
+              </div>
             </div>
 
-            {/* BUTTONS */}
+            {/* LOCATION */}
+            {order.location && (
+              <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
+                <MapPin className="h-4 w-4 text-[#C1502E]" />
+                <span>{order.location}</span>
+              </div>
+            )}
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              {/* PAID BUTTON */}
+            {/* PAYMENT STATUS */}
+            {order.payment_status && (
+              <div className="mt-4 flex items-center justify-between rounded-xl bg-[#f5f3ef] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-[#E8A33D]" />
 
-              <button
-                type="button"
-                disabled
-                className="flex flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#9fc4a5] px-5 py-3.5 text-sm font-semibold text-white opacity-90"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                PAID
-              </button>
+                  <span className="text-sm font-medium text-gray-600">
+                    Payment
+                  </span>
+                </div>
 
-              {/* ORDERS */}
+                {isPaid ? (
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#356b3e]">
+                    <CheckCircle2 className="h-4 w-4" />
+                    PAID
+                  </span>
+                ) : (
+                  <span className="text-sm font-semibold text-[#C1502E]">
+                    {order.payment_status.toUpperCase()}
+                  </span>
+                )}
+              </div>
+            )}
 
+            {/* ACTIONS */}
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/renter/orders"
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#ddd7ce] bg-white px-5 py-3.5 text-sm font-semibold text-[#292722] transition-all duration-300 hover:bg-[#f8f6f2]"
+                href={`/renter/orders/${orderId}`}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#ddd7ce] bg-white px-4 py-3 text-sm font-semibold text-[#292722] transition-all duration-300 hover:bg-[#f8f6f2]"
               >
-                <PackageCheck className="h-4 w-4" />
-                View My Orders
+                <Eye className="h-4 w-4" />
+                View Details
               </Link>
 
-              {/* DASHBOARD */}
+              {/* PAID */}
+              {isPaid && (
+                <button
+                  type="button"
+                  disabled
+                  className="flex flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#9fc4a5] px-4 py-3 text-sm font-semibold text-white opacity-90"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  PAID
+                </button>
+              )}
 
-              <Link
-                href="/renter"
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#ddd7ce] bg-white px-5 py-3.5 text-sm font-semibold text-[#292722] transition-all duration-300 hover:bg-[#f8f6f2]"
-              >
-                <Home className="h-4 w-4" />
-                Dashboard
-              </Link>
+              {/* PAYMENT SHOULD BE STARTED FROM /renter/orders */}
+              {!isPaid && order.status?.toLowerCase() === "approved" && (
+                <Link
+                  href="/renter/orders"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#E8A33D] px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#d9952f]"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Pay with Stripe
+                </Link>
+              )}
             </div>
           </div>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
